@@ -35,23 +35,33 @@ export default async function Home() {
     <main className="min-h-screen bg-neutral-950 text-white">
       <section className="mx-auto flex min-h-screen max-w-6xl flex-col justify-center px-6 py-12">
         <div className="mb-10">
-          <form action={logout} className="mb-6">
+          <div className="mb-6 flex flex-wrap gap-3">
+            <form action={logout}>
+              <button
+                type="submit"
+                className="rounded-full border border-neutral-700 px-4 py-2 text-sm text-neutral-300 hover:border-white hover:text-white"
+              >
+                Cerrar sesión
+              </button>
+            </form>
+
             <a
-  href="/catalogo-costos"
-  className="mb-6 inline-block rounded-full border border-neutral-700 px-4 py-2 text-sm text-neutral-300 hover:border-white hover:text-white"
->
-  Catálogo de costos
-</a>
-            <button
-              type="submit"
-              className="rounded-full border border-neutral-700 px-4 py-2 text-sm text-neutral-300 hover:border-white hover:text-white"
+              href="/catalogo-costos"
+              className="inline-block rounded-full border border-neutral-700 px-4 py-2 text-sm text-neutral-300 hover:border-white hover:text-white"
             >
-              Cerrar sesión
-            </button>
-          </form>
+              Catálogo de costos
+            </a>
+
+            <a
+              href="/clientes"
+              className="inline-block rounded-full border border-neutral-700 px-4 py-2 text-sm text-neutral-300 hover:border-white hover:text-white"
+            >
+              Clientes
+            </a>
+          </div>
 
           <p className="mb-3 text-sm uppercase tracking-[0.3em] text-neutral-400">
-            HOLLLOW COTIZADORES
+            Pantera Publicidad
           </p>
 
           <h1 className="text-4xl font-semibold md:text-6xl">

@@ -42,24 +42,25 @@ export default async function CatalogoCostosPage() {
           ← Volver
         </a>
 
-        <div className="mt-6 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div>
-            <p className="mb-3 text-sm uppercase tracking-[0.3em] text-neutral-500">
-              Hollow Cotizadores
-            </p>
+        <div className="mt-6">
+          <p className="mb-3 text-sm uppercase tracking-[0.3em] text-neutral-500">
+            Hollow Cotizadores
+          </p>
 
-            <h1 className="text-3xl font-semibold">Catálogo de costos</h1>
+          <h1 className="text-3xl font-semibold">Catálogo de costos</h1>
 
-            <p className="mt-2 text-sm text-neutral-400">
-              Edita costos base de materiales, servicios y consumibles.
-            </p>
-          </div>
+          <p className="mt-2 text-sm text-neutral-400">
+            Edita costos base de materiales, servicios y consumibles.
+          </p>
         </div>
 
         <section className="mt-8 rounded-2xl border border-neutral-800 bg-neutral-900 p-6">
           <h2 className="text-xl font-medium">Agregar material</h2>
 
-          <form action={createCostItem} className="mt-5 grid gap-4 md:grid-cols-6">
+          <form
+            action={createCostItem}
+            className="mt-5 grid gap-4 md:grid-cols-6"
+          >
             <input
               name="sku"
               placeholder="SKU"
@@ -120,7 +121,7 @@ export default async function CatalogoCostosPage() {
           </div>
 
           <div className="divide-y divide-neutral-800">
-            {(items as CostItem[]).map((item) => (
+            {(items as CostItem[] | null)?.map((item) => (
               <form
                 key={item.id}
                 action={updateCostItem}
