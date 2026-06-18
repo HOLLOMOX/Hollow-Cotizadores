@@ -1,3 +1,5 @@
+import { logout } from "./login/actions";
+
 const cotizadores = [
   {
     nombre: "Cajas de luz",
@@ -30,8 +32,17 @@ export default function Home() {
     <main className="min-h-screen bg-neutral-950 text-white">
       <section className="mx-auto flex min-h-screen max-w-6xl flex-col justify-center px-6 py-12">
         <div className="mb-10">
+          <form action={logout} className="mb-6">
+            <button
+              type="submit"
+              className="rounded-full border border-neutral-700 px-4 py-2 text-sm text-neutral-300 hover:border-white hover:text-white"
+            >
+              Cerrar sesión
+            </button>
+          </form>
+
           <p className="mb-3 text-sm uppercase tracking-[0.3em] text-neutral-400">
-            H O L L O W
+            Pantera Publicidad
           </p>
 
           <h1 className="text-4xl font-semibold md:text-6xl">
