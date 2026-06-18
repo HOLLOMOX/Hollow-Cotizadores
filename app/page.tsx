@@ -1,33 +1,36 @@
+import { redirect } from "next/navigation";
+import { createClient } from "@/utils/supabase/server";
 import { logout } from "./login/actions";
 
-const cotizadores = [
-  {
-    nombre: "Cajas de luz",
-    descripcion: "Cotizador para cajas de luz, bastidores iluminados y anuncios.",
-    href: "/cotizadores/cajas-luz",
-    activo: true,
-  },
-  {
-    nombre: "Letras de canal",
-    descripcion: "Cotizador para letras volumétricas, LEDs, fuentes y herrajes.",
-    href: "/cotizadores/letras-canal",
-    activo: true,
-  },
-  {
-    nombre: "Bastidores",
-    descripcion: "Próximamente.",
-    href: "#",
-    activo: false,
-  },
-  {
-    nombre: "Vinil",
-    descripcion: "Próximamente.",
-    href: "#",
-    activo: false,
-  },
-];
+type CalculatorType = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  active: boolean;
+  sort_order: number;
+};
 
-export default function Home() {
+export default async function Home() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const { data: cotizadores, error } = await supabase
+    .from("calculator_types")
+    .select("id, name, slug, description, active, sort_order")
+    .order("sort_order", { ascending: true });
+
+  if (error) {
+    console.error(error);
+  }
+
   return (
     <main className="min-h-screen bg-neutral-950 text-white">
       <section className="mx-auto flex min-h-screen max-w-6xl flex-col justify-center px-6 py-12">
@@ -42,7 +45,7 @@ export default function Home() {
           </form>
 
           <p className="mb-3 text-sm uppercase tracking-[0.3em] text-neutral-400">
-            Pantera Publicidad
+            HOLLLOW COTIZADORES
           </p>
 
           <h1 className="text-4xl font-semibold md:text-6xl">
@@ -56,25 +59,27 @@ export default function Home() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
-          {cotizadores.map((item) => (
+          {(cotizadores as CalculatorType[] | null)?.map((item) => (
             <a
-              key={item.nombre}
-              href={item.activo ? item.href : "#"}
+              key={item.id}
+              href={item.active ? `/cotizadores/${item.slug}` : "#"}
               className={`rounded-2xl border p-6 transition ${
-                item.activo
+                item.active
                   ? "border-neutral-700 bg-neutral-900 hover:border-white"
                   : "border-neutral-800 bg-neutral-900/50 opacity-50"
               }`}
             >
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-xl font-medium">{item.nombre}</h2>
+                <h2 className="text-xl font-medium">{item.name}</h2>
 
                 <span className="rounded-full bg-neutral-800 px-3 py-1 text-xs text-neutral-300">
-                  {item.activo ? "Activo" : "Próximamente"}
+                  {item.active ? "Activo" : "Próximamente"}
                 </span>
               </div>
 
-              <p className="text-sm text-neutral-400">{item.descripcion}</p>
+              <p className="text-sm text-neutral-400">
+                {item.description || "Sin descripción."}
+              </p>
             </a>
           ))}
         </div>
