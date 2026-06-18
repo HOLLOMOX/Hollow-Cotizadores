@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
-import CajasLuzCalculator from "./CajasLuzCalculator";
+import CajasLuzForm from "./CajasLuzForm";
 
-type CostCatalogRow = {
+type CostRow = {
   sku: string;
   name: string;
   unit: string;
@@ -42,16 +42,18 @@ export default async function CajasDeLuzPage() {
             Hollow Cotizadores
           </p>
 
-          <h1 className="text-3xl font-semibold">Cotizador de cajas de luz</h1>
+          <h1 className="text-3xl font-semibold">
+            Cotizador de cajas de luz
+          </h1>
 
           <p className="mt-2 max-w-2xl text-sm text-neutral-400">
-            Calcula frente, estructura, laterales, LED, fuentes, mano de obra,
-            instalación, extras, margen y precio sugerido.
+            Cálculo inicial para fabricación de caja de luz: medidas, frente,
+            estructura, laterales, LED, fuente, mano de obra y margen.
           </p>
         </div>
 
-        <CajasLuzCalculator costRows={(costRows ?? []) as CostCatalogRow[]} />
+        <CajasLuzForm costRows={(costRows ?? []) as CostRow[]} />
       </div>
     </main>
   );
-} 
+}
