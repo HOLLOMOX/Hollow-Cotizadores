@@ -72,7 +72,6 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
   const [cliente, setCliente] = useState("");
   const [proyecto, setProyecto] = useState("Caja de luz");
 
-  // Medidas principales
   const [ancho, setAncho] = useState("1");
   const [alto, setAlto] = useState("1");
   const [cantoCm, setCantoCm] = useState("12");
@@ -80,7 +79,6 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
 
   const [tipoCaja, setTipoCaja] = useState("Una vista");
   const [frente, setFrente] = useState("Lona backlight");
-
   const [iluminacion, setIluminacion] = useState("Lámparas LED");
 
   const [costoFrenteM2, setCostoFrenteM2] = useState("0");
@@ -88,7 +86,6 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
   const [costoLateralesM2, setCostoLateralesM2] = useState("0");
   const [manoObraM2, setManoObraM2] = useState("0");
 
-  // Reglas editables para iluminación
   const [separacionLamparasM, setSeparacionLamparasM] = useState("0.30");
   const [wattsPorLampara, setWattsPorLampara] = useState("18");
 
@@ -135,6 +132,7 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
     let wattsPorModulo = 0;
     let consumo = 0;
     let costoIluminacion = 0;
+    let usaFuente = false;
 
     if (iluminacion === "Lámparas LED") {
       const usaLampara120 = anchoM > 1.2;
@@ -156,6 +154,7 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
       iluminacionLabel = nombreLampara;
       consumo = iluminacionCantidad * n(wattsPorLampara);
       costoIluminacion = iluminacionCantidad * costoLampara;
+      usaFuente = false;
     }
 
     if (iluminacion === "Módulos LED normales") {
@@ -166,6 +165,7 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
       modulosTotales = iluminacionCantidad * MODULOS_POR_TIRA;
       consumo = modulosTotales * wattsPorModulo;
       costoIluminacion = iluminacionCantidad * tiraNormalCosto;
+      usaFuente = true;
     }
 
     if (iluminacion === "Módulos LED ultra brillantes") {
@@ -176,6 +176,7 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
       modulosTotales = iluminacionCantidad * MODULOS_POR_TIRA;
       consumo = modulosTotales * wattsPorModulo;
       costoIluminacion = iluminacionCantidad * tiraUltraCosto;
+      usaFuente = true;
     }
 
     if (iluminacion === "Micro LEDs") {
@@ -186,14 +187,18 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
       modulosTotales = iluminacionCantidad * MODULOS_POR_TIRA;
       consumo = modulosTotales * wattsPorModulo;
       costoIluminacion = iluminacionCantidad * tiraMicroCosto;
+      usaFuente = true;
     }
 
-    const fuente = fuentePorConsumo(consumo);
+    const fuente = usaFuente
+      ? fuentePorConsumo(consumo)
+      : { label: "No aplica", qty30: 0, qty60: 0, qty100: 0 };
 
-    const costoFuente =
-      fuente.qty30 * fuente30 +
-      fuente.qty60 * fuente60 +
-      fuente.qty100 * fuente100;
+    const costoFuente = usaFuente
+      ? fuente.qty30 * fuente30 +
+        fuente.qty60 * fuente60 +
+        fuente.qty100 * fuente100
+      : 0;
 
     const costoInstalacion = n(instalacion);
     const costoExtras = n(extras);
@@ -229,6 +234,7 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
       modulosTotales,
       wattsPorModulo,
       consumo,
+      usaFuente,
       fuente,
       costoFrente,
       costoEstructura,
@@ -272,7 +278,7 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
     fuente100,
   ]);
 
-  const partidas = [
+  const partidasBase = [
     ["Frente " + frente, calc.areaFrente, "m²", calc.costoFrente],
     ["Estructura / perímetro", calc.perimetro, "ml", calc.costoEstructura],
     ["Canto / laterales", calc.areaLaterales, "m²", calc.costoLaterales],
@@ -282,16 +288,24 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
       calc.iluminacionUnidad,
       calc.costoIluminacion,
     ],
-    [
-      calc.fuente.label,
-      calc.fuente.qty30 + calc.fuente.qty60 + calc.fuente.qty100,
-      "PIEZA",
-      calc.costoFuente,
-    ],
+  ] as const;
+
+  const partidaFuente = [
+    calc.fuente.label,
+    calc.fuente.qty30 + calc.fuente.qty60 + calc.fuente.qty100,
+    "PIEZA",
+    calc.costoFuente,
+  ] as const;
+
+  const partidasFinales = [
     ["Mano de obra", calc.areaFrente, "m²", calc.costoManoObra],
     ["Instalación", 1, "SERVICIO", calc.costoInstalacion],
     ["Extras", 1, "LOTE", calc.costoExtras],
   ] as const;
+
+  const partidas = calc.usaFuente
+    ? [...partidasBase, partidaFuente, ...partidasFinales]
+    : [...partidasBase, ...partidasFinales];
 
   return (
     <div className="mt-8 grid gap-6 lg:grid-cols-12">
@@ -302,33 +316,10 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
           <Input label="Cliente" value={cliente} setValue={setCliente} />
           <Input label="Proyecto" value={proyecto} setValue={setProyecto} />
 
-          <Input
-            label="Ancho m"
-            value={ancho}
-            setValue={setAncho}
-            type="number"
-          />
-
-          <Input
-            label="Alto m"
-            value={alto}
-            setValue={setAlto}
-            type="number"
-          />
-
-          <Input
-            label="Canto cm"
-            value={cantoCm}
-            setValue={setCantoCm}
-            type="number"
-          />
-
-          <Input
-            label="Cantidad"
-            value={cantidad}
-            setValue={setCantidad}
-            type="number"
-          />
+          <Input label="Ancho m" value={ancho} setValue={setAncho} type="number" />
+          <Input label="Alto m" value={alto} setValue={setAlto} type="number" />
+          <Input label="Canto cm" value={cantoCm} setValue={setCantoCm} type="number" />
+          <Input label="Cantidad" value={cantidad} setValue={setCantidad} type="number" />
 
           <Select
             label="Tipo de caja"
@@ -407,54 +398,13 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
             />
           )}
 
-          <Input
-            label="Frente costo m²"
-            value={costoFrenteM2}
-            setValue={setCostoFrenteM2}
-            type="number"
-          />
-
-          <Input
-            label="Estructura costo ml"
-            value={costoEstructuraMl}
-            setValue={setCostoEstructuraMl}
-            type="number"
-          />
-
-          <Input
-            label="Canto costo m²"
-            value={costoLateralesM2}
-            setValue={setCostoLateralesM2}
-            type="number"
-          />
-
-          <Input
-            label="Mano de obra m²"
-            value={manoObraM2}
-            setValue={setManoObraM2}
-            type="number"
-          />
-
-          <Input
-            label="Instalación"
-            value={instalacion}
-            setValue={setInstalacion}
-            type="number"
-          />
-
-          <Input
-            label="Extras"
-            value={extras}
-            setValue={setExtras}
-            type="number"
-          />
-
-          <Input
-            label="Margen %"
-            value={margen}
-            setValue={setMargen}
-            type="number"
-          />
+          <Input label="Frente costo m²" value={costoFrenteM2} setValue={setCostoFrenteM2} type="number" />
+          <Input label="Estructura costo ml" value={costoEstructuraMl} setValue={setCostoEstructuraMl} type="number" />
+          <Input label="Canto costo m²" value={costoLateralesM2} setValue={setCostoLateralesM2} type="number" />
+          <Input label="Mano de obra m²" value={manoObraM2} setValue={setManoObraM2} type="number" />
+          <Input label="Instalación" value={instalacion} setValue={setInstalacion} type="number" />
+          <Input label="Extras" value={extras} setValue={setExtras} type="number" />
+          <Input label="Margen %" value={margen} setValue={setMargen} type="number" />
         </div>
       </section>
 
@@ -476,16 +426,10 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
         </div>
 
         <div className="mt-6 grid gap-3 md:grid-cols-4">
-          <Card
-            title="Área frente"
-            value={`${calc.areaFrente.toFixed(2)} m²`}
-          />
+          <Card title="Área frente" value={`${calc.areaFrente.toFixed(2)} m²`} />
           <Card title="Perímetro" value={`${calc.perimetro.toFixed(2)} ml`} />
           <Card title="Canto" value={`${n(cantoCm).toFixed(2)} cm`} />
-          <Card
-            title="Área canto"
-            value={`${calc.areaLaterales.toFixed(2)} m²`}
-          />
+          <Card title="Área canto" value={`${calc.areaLaterales.toFixed(2)} m²`} />
         </div>
 
         <div className="mt-6 grid gap-3 md:grid-cols-4">
@@ -549,8 +493,8 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
         </div>
 
         <p className="mt-6 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-100">
-          Paso actual: medidas en metros, canto en centímetros, iluminación con
-          consumo por módulo y fuente automática.
+          Lámparas LED no usan fuente. Las fuentes solo se calculan para módulos
+          LED normales, ultra brillantes y micro LEDs.
         </p>
       </section>
     </div>
