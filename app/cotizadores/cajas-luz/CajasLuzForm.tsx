@@ -72,10 +72,10 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
   const [cliente, setCliente] = useState("");
   const [proyecto, setProyecto] = useState("Caja de luz");
 
-  // Medidas en metros
+  // Medidas principales
   const [ancho, setAncho] = useState("1");
   const [alto, setAlto] = useState("1");
-  const [canto, setCanto] = useState("0.12");
+  const [cantoCm, setCantoCm] = useState("12");
   const [cantidad, setCantidad] = useState("1");
 
   const [tipoCaja, setTipoCaja] = useState("Una vista");
@@ -114,7 +114,7 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
   const calc = useMemo(() => {
     const anchoM = n(ancho);
     const altoM = n(alto);
-    const cantoM = n(canto);
+    const cantoM = n(cantoCm) / 100;
     const qty = Math.max(n(cantidad), 1);
 
     const vistas = tipoCaja === "Doble vista" ? 2 : 1;
@@ -145,6 +145,7 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
         : "Lámpara LED 60 cm";
 
       const lamparasPorLinea = Math.max(Math.ceil(anchoM / largoLamparaM), 1);
+
       const lineas = Math.max(
         Math.ceil(altoM / Math.max(n(separacionLamparasM), 0.01)),
         1
@@ -216,6 +217,9 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
 
     return {
       vistas,
+      anchoM,
+      altoM,
+      cantoM,
       areaFrente,
       perimetro,
       areaLaterales,
@@ -242,7 +246,7 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
   }, [
     ancho,
     alto,
-    canto,
+    cantoCm,
     cantidad,
     tipoCaja,
     iluminacion,
@@ -271,7 +275,7 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
   const partidas = [
     ["Frente " + frente, calc.areaFrente, "m²", calc.costoFrente],
     ["Estructura / perímetro", calc.perimetro, "ml", calc.costoEstructura],
-    ["Laterales / canto", calc.areaLaterales, "cm", calc.costoLaterales],
+    ["Canto / laterales", calc.areaLaterales, "m²", calc.costoLaterales],
     [
       calc.iluminacionLabel,
       calc.iluminacionCantidad,
@@ -313,9 +317,9 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
           />
 
           <Input
-            label="canto cm"
-            value={canto}
-            setValue={setCanto}
+            label="Canto cm"
+            value={cantoCm}
+            setValue={setCantoCm}
             type="number"
           />
 
@@ -418,7 +422,7 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
           />
 
           <Input
-            label="Laterales costo m²"
+            label="Canto costo m²"
             value={costoLateralesM2}
             setValue={setCostoLateralesM2}
             type="number"
@@ -477,11 +481,11 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
             value={`${calc.areaFrente.toFixed(2)} m²`}
           />
           <Card title="Perímetro" value={`${calc.perimetro.toFixed(2)} ml`} />
+          <Card title="Canto" value={`${n(cantoCm).toFixed(2)} cm`} />
           <Card
-            title="Área laterales"
+            title="Área canto"
             value={`${calc.areaLaterales.toFixed(2)} m²`}
           />
-          <Card title="Fuente" value={calc.fuente.label} />
         </div>
 
         <div className="mt-6 grid gap-3 md:grid-cols-4">
@@ -495,6 +499,7 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
         </div>
 
         <div className="mt-6 grid gap-3 md:grid-cols-4">
+          <Card title="Fuente" value={calc.fuente.label} />
           <Card
             title="Watts módulo"
             value={
@@ -505,7 +510,6 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
           />
           <Card title="Vistas" value={`${calc.vistas}`} />
           <Card title="Tipo" value={tipoCaja} />
-          <Card title="Margen" value={`${calc.margenNum.toFixed(2)}%`} />
         </div>
 
         <div className="mt-6 overflow-hidden rounded-2xl border border-neutral-800">
@@ -541,13 +545,12 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
         <div className="mt-6 grid gap-3 md:grid-cols-3">
           <Card title="Costo total" value={money(calc.costoTotal)} />
           <Card title="Utilidad" value={money(calc.utilidad)} />
-          <Card title="Precio sugerido" value={money(calc.precioVenta)} />
+          <Card title="Margen" value={`${calc.margenNum.toFixed(2)}%`} />
         </div>
 
         <p className="mt-6 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-100">
-          Paso 1: iluminación real agregada con consumo por módulo y 20 módulos
-          por tira. Falta integrar lámina, tubular, soldadura, pijas, cable,
-          pintura y tiempos de fabricación.
+          Paso actual: medidas en metros, canto en centímetros, iluminación con
+          consumo por módulo y fuente automática.
         </p>
       </section>
     </div>
