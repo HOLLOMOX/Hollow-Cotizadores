@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
-import CajasLuzForm from "./CajasLuzForm";
+import CajasLuzForm from "./Ca  jasLuzForm";
 
 type CostRow = {
   sku: string;
@@ -56,4 +56,4 @@ export default async function CajasDeLuzPage() {
       </div>
     </main>
   );
-}
+} 
