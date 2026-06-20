@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
-import CajasLuzForm from "./Ca  jasLuzForm";
+import CajasLuzForm from "./CajasLuzForm";
 
 type CostRow = {
   sku: string;
@@ -47,8 +47,8 @@ export default async function CajasDeLuzPage() {
           </h1>
 
           <p className="mt-2 max-w-2xl text-sm text-neutral-400">
-            Cálculo inicial para fabricación de caja de luz: medidas, frente,
-            estructura, laterales, LED, fuente, mano de obra y margen.
+            Cálculo inicial para fabricación de caja de luz: medidas en metros,
+            frente, estructura, laterales, LED, fuente, mano de obra y margen.
           </p>
         </div>
 
@@ -56,4 +56,4 @@ export default async function CajasDeLuzPage() {
       </div>
     </main>
   );
-} 
+}
