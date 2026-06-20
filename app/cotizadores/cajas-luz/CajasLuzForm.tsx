@@ -75,7 +75,7 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
   // Medidas en metros
   const [ancho, setAncho] = useState("1");
   const [alto, setAlto] = useState("1");
-  const [profundidad, setProfundidad] = useState("0.12");
+  const [canto, setCanto] = useState("0.12");
   const [cantidad, setCantidad] = useState("1");
 
   const [tipoCaja, setTipoCaja] = useState("Una vista");
@@ -114,14 +114,14 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
   const calc = useMemo(() => {
     const anchoM = n(ancho);
     const altoM = n(alto);
-    const profundidadM = n(profundidad);
+    const cantoM = n(canto);
     const qty = Math.max(n(cantidad), 1);
 
     const vistas = tipoCaja === "Doble vista" ? 2 : 1;
 
     const areaFrente = anchoM * altoM * qty * vistas;
     const perimetro = 2 * (anchoM + altoM) * qty;
-    const areaLaterales = perimetro * profundidadM;
+    const areaLaterales = perimetro * cantoM;
 
     const costoFrente = areaFrente * n(costoFrenteM2);
     const costoEstructura = perimetro * n(costoEstructuraMl);
@@ -242,7 +242,7 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
   }, [
     ancho,
     alto,
-    profundidad,
+    canto,
     cantidad,
     tipoCaja,
     iluminacion,
@@ -271,7 +271,7 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
   const partidas = [
     ["Frente " + frente, calc.areaFrente, "m²", calc.costoFrente],
     ["Estructura / perímetro", calc.perimetro, "ml", calc.costoEstructura],
-    ["Laterales / profundidad", calc.areaLaterales, "m²", calc.costoLaterales],
+    ["Laterales / canto", calc.areaLaterales, "cm", calc.costoLaterales],
     [
       calc.iluminacionLabel,
       calc.iluminacionCantidad,
@@ -313,9 +313,9 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
           />
 
           <Input
-            label="Profundidad m"
-            value={profundidad}
-            setValue={setProfundidad}
+            label="canto cm"
+            value={canto}
+            setValue={setCanto}
             type="number"
           />
 
