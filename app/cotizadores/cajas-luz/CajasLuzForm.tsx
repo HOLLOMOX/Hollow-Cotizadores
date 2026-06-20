@@ -17,6 +17,8 @@ type FuenteResult = {
   qty100: number;
 };
 
+type Partida = [string, number, string, number];
+
 const MODULOS_POR_TIRA = 20;
 
 const WATTS_MODULO_NORMAL = 0.72;
@@ -65,7 +67,11 @@ function reglaCanto({
   tipoCaja: string;
   iluminacion: string;
 }) {
-  if (tipoCaja === "Doble vista") {
+  if (
+    tipoCaja === "Doble vista" ||
+    tipoCaja === "Bandera" ||
+    tipoCaja === "Paleta"
+  ) {
     return {
       cantoCm: 40,
       desarrolloLaminaCm: 48,
@@ -100,6 +106,41 @@ function reglaCanto({
   };
 }
 
+function reglaTubular({
+  tipoCaja,
+  areaBase,
+}: {
+  tipoCaja: string;
+  areaBase: number;
+}) {
+  if (
+    tipoCaja === "Bandera" ||
+    tipoCaja === "Paleta" ||
+    tipoCaja === "Doble vista" ||
+    areaBase > 6
+  ) {
+    return {
+      sku: "TUBULAR_1X1",
+      label: "Tubular 1 x 1",
+      varillaSoldaduraPorInsercion: 0.5,
+    };
+  }
+
+  if (tipoCaja === "Suajada" || areaBase < 1) {
+    return {
+      sku: "TUBULAR_1_2",
+      label: "Tubular 1/2 x 1/2",
+      varillaSoldaduraPorInsercion: 1 / 3,
+    };
+  }
+
+  return {
+    sku: "TUBULAR_3_4",
+    label: "Tubular 3/4 x 3/4",
+    varillaSoldaduraPorInsercion: 1 / 3,
+  };
+}
+
 export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
   const costMap = useMemo(() => {
     const map = new Map<string, number>();
@@ -126,7 +167,6 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
   const [iluminacion, setIluminacion] = useState("Lámparas LED");
 
   const [costoFrenteM2, setCostoFrenteM2] = useState("0");
-  const [costoEstructuraMl, setCostoEstructuraMl] = useState("0");
   const [manoObraM2, setManoObraM2] = useState("0");
 
   const [separacionLamparasM, setSeparacionLamparasM] = useState("0.30");
@@ -153,6 +193,11 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
   const fuente60 = costMap.get("FUENTE_60W") ?? 0;
   const fuente100 = costMap.get("FUENTE_100W") ?? 0;
 
+  const tubular12Costo = costMap.get("TUBULAR_1_2") ?? 0;
+  const tubular34Costo = costMap.get("TUBULAR_3_4") ?? 0;
+  const tubular1x1Costo = costMap.get("TUBULAR_1X1") ?? 0;
+  const soldaduraCosto = costMap.get("SOLDADURA_6013") ?? 0;
+
   const calc = useMemo(() => {
     const anchoM = n(ancho);
     const altoM = n(alto);
@@ -171,6 +216,7 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
 
     const desarrolloLaminaM = desarrolloLaminaCm / 100;
 
+    const areaBase = anchoM * altoM;
     const areaFrente = anchoM * altoM * qty * vistas;
     const areaRespaldo = anchoM * altoM * qty;
     const perimetro = 2 * (anchoM + altoM) * qty;
@@ -180,9 +226,40 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
     const areaLaminaTotal = areaRespaldo + areaLaminaCanto;
 
     const costoFrente = areaFrente * n(costoFrenteM2);
-    const costoEstructura = perimetro * n(costoEstructuraMl);
     const costoLamina = areaLaminaTotal * laminaGalvCosto;
     const costoManoObra = areaFrente * n(manoObraM2);
+
+    const tubular = reglaTubular({ tipoCaja, areaBase });
+
+    const refuerzosVerticalesPorCaja = Math.max(Math.ceil(anchoM / 1) - 1, 0);
+    const refuerzosHorizontalesPorCaja = Math.max(Math.ceil(altoM / 1) - 1, 0);
+
+    const refuerzoVerticalMl = refuerzosVerticalesPorCaja * altoM * qty;
+    const refuerzoHorizontalMl = refuerzosHorizontalesPorCaja * anchoM * qty;
+    const refuerzosMl = refuerzoVerticalMl + refuerzoHorizontalMl;
+
+    const tubularMl = perimetro + refuerzosMl;
+    const tramosTubular = Math.ceil(tubularMl / 6);
+
+    const tubularCostoUnitario =
+      tubular.sku === "TUBULAR_1_2"
+        ? tubular12Costo
+        : tubular.sku === "TUBULAR_3_4"
+          ? tubular34Costo
+          : tubular1x1Costo;
+
+    const costoTubular = tramosTubular * tubularCostoUnitario;
+
+    const inserciones =
+      4 * qty +
+      refuerzosVerticalesPorCaja * 2 * qty +
+      refuerzosHorizontalesPorCaja * 2 * qty;
+
+    const varillasSoldadura = Math.ceil(
+      inserciones * tubular.varillaSoldaduraPorInsercion
+    );
+
+    const costoSoldadura = varillasSoldadura * soldaduraCosto;
 
     let iluminacionLabel = "Sin iluminación";
     let iluminacionCantidad = 0;
@@ -264,8 +341,9 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
 
     const costoTotal =
       costoFrente +
-      costoEstructura +
       costoLamina +
+      costoTubular +
+      costoSoldadura +
       costoIluminacion +
       costoFuente +
       costoManoObra +
@@ -283,6 +361,7 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
       vistas,
       anchoM,
       altoM,
+      areaBase,
       areaFrente,
       areaRespaldo,
       perimetro,
@@ -294,6 +373,18 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
       areaLaminaCanto,
       areaLaminaTotal,
       reglaCantoLabel: regla.label,
+
+      tubularLabel: tubular.label,
+      tubularMl,
+      tramosTubular,
+      refuerzosVerticalesPorCaja,
+      refuerzosHorizontalesPorCaja,
+      refuerzosMl,
+      inserciones,
+      varillasSoldadura,
+      costoTubular,
+      costoSoldadura,
+
       iluminacionLabel,
       iluminacionCantidad,
       iluminacionUnidad,
@@ -303,7 +394,6 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
       usaFuente,
       fuente,
       costoFrente,
-      costoEstructura,
       costoLamina,
       costoIluminacion,
       costoFuente,
@@ -324,7 +414,6 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
     usarCantoAutomatico,
     cantoCmManual,
     costoFrenteM2,
-    costoEstructuraMl,
     manoObraM2,
     separacionLamparasM,
     wattsPorLampara,
@@ -343,11 +432,14 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
     fuente30,
     fuente60,
     fuente100,
+    tubular12Costo,
+    tubular34Costo,
+    tubular1x1Costo,
+    soldaduraCosto,
   ]);
 
-  const partidasBase = [
+  const partidasBase: Partida[] = [
     ["Frente " + frente, calc.areaFrente, "m²", calc.costoFrente],
-    ["Estructura / perímetro", calc.perimetro, "ml", calc.costoEstructura],
     [
       "Lámina respaldo",
       calc.areaRespaldo,
@@ -360,26 +452,33 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
       "m²",
       calc.areaLaminaCanto * laminaGalvCosto,
     ],
+    [calc.tubularLabel, calc.tramosTubular, "TRAMO 6M", calc.costoTubular],
+    [
+      "Soldadura 6013",
+      calc.varillasSoldadura,
+      "VARILLA",
+      calc.costoSoldadura,
+    ],
     [
       calc.iluminacionLabel,
       calc.iluminacionCantidad,
       calc.iluminacionUnidad,
       calc.costoIluminacion,
     ],
-  ] as const;
+  ];
 
-  const partidaFuente = [
+  const partidaFuente: Partida = [
     calc.fuente.label,
     calc.fuente.qty30 + calc.fuente.qty60 + calc.fuente.qty100,
     "PIEZA",
     calc.costoFuente,
-  ] as const;
+  ];
 
-  const partidasFinales = [
+  const partidasFinales: Partida[] = [
     ["Mano de obra", calc.areaFrente, "m²", calc.costoManoObra],
     ["Instalación", 1, "SERVICIO", calc.costoInstalacion],
     ["Extras", 1, "LOTE", calc.costoExtras],
-  ] as const;
+  ];
 
   const partidas = calc.usaFuente
     ? [...partidasBase, partidaFuente, ...partidasFinales]
@@ -395,15 +494,8 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
           <Input label="Proyecto" value={proyecto} setValue={setProyecto} />
 
           <Input label="Ancho m" value={ancho} setValue={setAncho} type="number" />
-
           <Input label="Alto m" value={alto} setValue={setAlto} type="number" />
-
-          <Input
-            label="Cantidad"
-            value={cantidad}
-            setValue={setCantidad}
-            type="number"
-          />
+          <Input label="Cantidad" value={cantidad} setValue={setCantidad} type="number" />
 
           <label className="flex items-center gap-3 text-sm text-neutral-300">
             <input
@@ -428,7 +520,7 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
             label="Tipo de caja"
             value={tipoCaja}
             setValue={setTipoCaja}
-            options={["Una vista", "Doble vista"]}
+            options={["Una vista", "Doble vista", "Bandera", "Paleta", "Suajada"]}
           />
 
           <Select
@@ -509,28 +601,14 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
           />
 
           <Input
-            label="Estructura costo ml"
-            value={costoEstructuraMl}
-            setValue={setCostoEstructuraMl}
-            type="number"
-          />
-
-          <Input
             label="Mano de obra m²"
             value={manoObraM2}
             setValue={setManoObraM2}
             type="number"
           />
 
-          <Input
-            label="Instalación"
-            value={instalacion}
-            setValue={setInstalacion}
-            type="number"
-          />
-
+          <Input label="Instalación" value={instalacion} setValue={setInstalacion} type="number" />
           <Input label="Extras" value={extras} setValue={setExtras} type="number" />
-
           <Input label="Margen %" value={margen} setValue={setMargen} type="number" />
         </div>
       </section>
@@ -556,31 +634,26 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
           <Card title="Área frente" value={`${calc.areaFrente.toFixed(2)} m²`} />
           <Card title="Perímetro" value={`${calc.perimetro.toFixed(2)} ml`} />
           <Card title="Canto" value={`${calc.cantoCm.toFixed(2)} cm`} />
-          <Card
-            title="Desarrollo lámina"
-            value={`${calc.desarrolloLaminaCm.toFixed(2)} cm`}
-          />
+          <Card title="Desarrollo lámina" value={`${calc.desarrolloLaminaCm.toFixed(2)} cm`} />
         </div>
 
         <div className="mt-6 grid gap-3 md:grid-cols-4">
           <Card title="Respaldo" value={`${calc.areaRespaldo.toFixed(2)} m²`} />
-          <Card
-            title="Lámina canto"
-            value={`${calc.areaLaminaCanto.toFixed(2)} m²`}
-          />
-          <Card
-            title="Lámina total"
-            value={`${calc.areaLaminaTotal.toFixed(2)} m²`}
-          />
+          <Card title="Lámina canto" value={`${calc.areaLaminaCanto.toFixed(2)} m²`} />
+          <Card title="Lámina total" value={`${calc.areaLaminaTotal.toFixed(2)} m²`} />
           <Card title="Regla canto" value={calc.reglaCantoLabel} />
         </div>
 
         <div className="mt-6 grid gap-3 md:grid-cols-4">
+          <Card title="Tubular" value={calc.tubularLabel} />
+          <Card title="Tubular ml" value={`${calc.tubularMl.toFixed(2)} ml`} />
+          <Card title="Tramos 6m" value={`${calc.tramosTubular}`} />
+          <Card title="Soldadura" value={`${calc.varillasSoldadura} varillas`} />
+        </div>
+
+        <div className="mt-6 grid gap-3 md:grid-cols-4">
           <Card title="Iluminación" value={calc.iluminacionLabel} />
-          <Card
-            title="Cantidad luz"
-            value={`${calc.iluminacionCantidad} ${calc.iluminacionUnidad}`}
-          />
+          <Card title="Cantidad luz" value={`${calc.iluminacionCantidad} ${calc.iluminacionUnidad}`} />
           <Card title="Módulos" value={`${calc.modulosTotales} módulos`} />
           <Card title="Consumo" value={`${calc.consumo.toFixed(1)} W`} />
         </div>
@@ -589,9 +662,7 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
           <Card title="Fuente" value={calc.fuente.label} />
           <Card
             title="Watts módulo"
-            value={
-              calc.wattsPorModulo > 0 ? `${calc.wattsPorModulo} W` : "No aplica"
-            }
+            value={calc.wattsPorModulo > 0 ? `${calc.wattsPorModulo} W` : "No aplica"}
           />
           <Card title="Vistas" value={`${calc.vistas}`} />
           <Card title="Tipo" value={tipoCaja} />
@@ -607,18 +678,10 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
 
           <div className="divide-y divide-neutral-800">
             {partidas.map(([concepto, cantidadPartida, unidad, total]) => (
-              <div
-                key={concepto}
-                className="grid grid-cols-12 px-4 py-3 text-sm"
-              >
+              <div key={concepto} className="grid grid-cols-12 px-4 py-3 text-sm">
                 <div className="col-span-6">{concepto}</div>
-
-                <div className="col-span-2 text-right">
-                  {Number(cantidadPartida).toFixed(2)}
-                </div>
-
+                <div className="col-span-2 text-right">{Number(cantidadPartida).toFixed(2)}</div>
                 <div className="col-span-2 text-neutral-400">{unidad}</div>
-
                 <div className="col-span-2 text-right">{money(Number(total))}</div>
               </div>
             ))}
@@ -632,8 +695,8 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
         </div>
 
         <p className="mt-6 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-100">
-          Paso 2: canto automático y lámina galvanizada agregados. El desarrollo
-          de lámina considera dobleces y aplastones.
+          Paso 3: estructura con tubular y soldadura agregada. Falta agregar
+          pijas, cables, pintura, primer, thinner, lijas y tiempos de fabricación.
         </p>
       </section>
     </div>
