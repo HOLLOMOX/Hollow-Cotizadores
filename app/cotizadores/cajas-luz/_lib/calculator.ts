@@ -70,6 +70,157 @@ function addLine({
   });
 }
 
+function addCaratulaLines({
+  lines,
+  form,
+  costMap,
+  areaFrenteM2,
+}: {
+  lines: MaterialLine[];
+  form: FormState;
+  costMap: Map<string, number>;
+  areaFrenteM2: number;
+}) {
+  if (form.caratula === "Lona backlight impresa") {
+    addLine({
+      lines,
+      grupo: "Carátula",
+      concepto: "Lona backlight",
+      sku: "LONA_BACKLIGHT",
+      cantidad: areaFrenteM2,
+      unidad: "m²",
+      costoUnitario: cost(costMap, "LONA_BACKLIGHT"),
+    });
+
+    addLine({
+      lines,
+      grupo: "Carátula",
+      concepto: "Impresión lona backlight alta resolución HP",
+      sku: "IMPRESION_LONA_HP",
+      cantidad: areaFrenteM2,
+      unidad: "m²",
+      costoUnitario: cost(costMap, "IMPRESION_LONA_HP"),
+    });
+
+    return;
+  }
+
+  if (form.caratula === "Lona backlight rotulada") {
+    addLine({
+      lines,
+      grupo: "Carátula",
+      concepto: "Lona backlight",
+      sku: "LONA_BACKLIGHT",
+      cantidad: areaFrenteM2,
+      unidad: "m²",
+      costoUnitario: cost(costMap, "LONA_BACKLIGHT"),
+    });
+
+    addLine({
+      lines,
+      grupo: "Carátula",
+      concepto: "Vinil de corte translúcido",
+      sku: "VINIL_CORTE_TRANSLUCIDO",
+      cantidad: areaFrenteM2,
+      unidad: "m²",
+      costoUnitario: cost(costMap, "VINIL_CORTE_TRANSLUCIDO"),
+    });
+
+    addLine({
+      lines,
+      grupo: "Carátula",
+      concepto: "Mano de obra rotulado vinil",
+      sku: "ROTULADO_VINIL",
+      cantidad: areaFrenteM2,
+      unidad: "m²",
+      costoUnitario: cost(costMap, "ROTULADO_VINIL"),
+    });
+
+    return;
+  }
+
+  if (form.caratula === "Acrílico rotulado") {
+    addLine({
+      lines,
+      grupo: "Carátula",
+      concepto: "Acrílico blanco lechoso",
+      sku: "ACRILICO_BLANCO_LECHOSO",
+      cantidad: areaFrenteM2,
+      unidad: "m²",
+      costoUnitario: cost(costMap, "ACRILICO_BLANCO_LECHOSO"),
+    });
+
+    addLine({
+      lines,
+      grupo: "Carátula",
+      concepto: "Vinil de corte translúcido",
+      sku: "VINIL_CORTE_TRANSLUCIDO",
+      cantidad: areaFrenteM2,
+      unidad: "m²",
+      costoUnitario: cost(costMap, "VINIL_CORTE_TRANSLUCIDO"),
+    });
+
+    addLine({
+      lines,
+      grupo: "Carátula",
+      concepto: "Mano de obra rotulado vinil",
+      sku: "ROTULADO_VINIL",
+      cantidad: areaFrenteM2,
+      unidad: "m²",
+      costoUnitario: cost(costMap, "ROTULADO_VINIL"),
+    });
+
+    return;
+  }
+
+  if (form.caratula === "Acrílico impreso") {
+    addLine({
+      lines,
+      grupo: "Carátula",
+      concepto: "Acrílico blanco lechoso",
+      sku: "ACRILICO_BLANCO_LECHOSO",
+      cantidad: areaFrenteM2,
+      unidad: "m²",
+      costoUnitario: cost(costMap, "ACRILICO_BLANCO_LECHOSO"),
+    });
+
+    addLine({
+      lines,
+      grupo: "Carátula",
+      concepto: "Impresión sobre acrílico",
+      sku: "IMPRESION_ACRILICO",
+      cantidad: areaFrenteM2,
+      unidad: "m²",
+      costoUnitario: cost(costMap, "IMPRESION_ACRILICO"),
+    });
+
+    return;
+  }
+
+  if (form.caratula === "Policarbonato") {
+    addLine({
+      lines,
+      grupo: "Carátula",
+      concepto: "Policarbonato",
+      sku: "POLICARBONATO",
+      cantidad: areaFrenteM2,
+      unidad: "m²",
+      costoUnitario: cost(costMap, "POLICARBONATO"),
+    });
+
+    return;
+  }
+
+  addLine({
+    lines,
+    grupo: "Carátula",
+    concepto: "Carátula especial / otro",
+    cantidad: areaFrenteM2,
+    unidad: "m²",
+    costoUnitario: toNumber(form.costoCaratulaM2),
+  });
+}
+
 function getPrecioState(margen: number) {
   if (margen >= 35) return "MARGEN SALUDABLE PARA NEGOCIAR";
   if (margen >= 25) return "MARGEN ACEPTABLE, REVISAR DESCUENTOS";
@@ -139,13 +290,11 @@ export function calculateCajaLuz(
 
   const lines: MaterialLine[] = [];
 
-  addLine({
+  addCaratulaLines({
     lines,
-    grupo: "Carátula",
-    concepto: form.caratula,
-    cantidad: areaFrenteM2,
-    unidad: "m²",
-    costoUnitario: toNumber(form.costoCaratulaM2),
+    form,
+    costMap,
+    areaFrenteM2,
   });
 
   addLine({
@@ -423,7 +572,10 @@ export function calculateCajaLuz(
   });
 
   const missingCost = lines.some(
-    (line) => line.cantidad > 0 && line.total === 0 && line.grupo !== "Adicionales"
+    (line) =>
+      line.cantidad > 0 &&
+      line.total === 0 &&
+      line.grupo !== "Adicionales"
   );
 
   const validations = {
@@ -434,9 +586,11 @@ export function calculateCajaLuz(
       form.incluyeInstalacion === "SI" && instalacionHoras <= 0
         ? "REVISAR INSTALACIÓN"
         : "PRECIOS ESPECIALES COMPLETOS",
-    impresion: form.caratula.includes("impresa")
-      ? "IMPRESIÓN CONFIGURADA"
-      : "NO REQUIERE IMPRESIÓN",
+    impresion:
+      form.caratula === "Lona backlight impresa" ||
+      form.caratula === "Acrílico impreso"
+        ? "IMPRESIÓN CONFIGURADA"
+        : "NO REQUIERE IMPRESIÓN",
     precio: getPrecioState(margenPorcentaje),
   };
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import type { CostRow, FormState } from "./_lib/types";
 import {
   CARATULAS,
@@ -38,17 +38,16 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
     }));
   }
 
-  const groupedPartidas = result.partidas.reduce<Record<string, typeof result.partidas>>(
-    (groups, line) => {
-      if (!groups[line.grupo]) {
-        groups[line.grupo] = [];
-      }
+  const groupedPartidas = result.partidas.reduce<
+    Record<string, typeof result.partidas>
+  >((groups, line) => {
+    if (!groups[line.grupo]) {
+      groups[line.grupo] = [];
+    }
 
-      groups[line.grupo].push(line);
-      return groups;
-    },
-    {}
-  );
+    groups[line.grupo].push(line);
+    return groups;
+  }, {});
 
   return (
     <div className="mt-8 space-y-6">
@@ -97,7 +96,9 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
                 label="Tipo de caja"
                 value={form.tipoCaja}
                 options={TIPOS_CAJA}
-                onChange={(value) => updateField("tipoCaja", value as FormState["tipoCaja"])}
+                onChange={(value) =>
+                  updateField("tipoCaja", value as FormState["tipoCaja"])
+                }
               />
 
               <NumberField
@@ -149,8 +150,24 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
                 label="Carátula"
                 value={form.caratula}
                 options={CARATULAS}
-                onChange={(value) => updateField("caratula", value as FormState["caratula"])}
+                onChange={(value) =>
+                  updateField("caratula", value as FormState["caratula"])
+                }
               />
+
+              <InfoBox>
+                La carátula se calcula automáticamente según la opción
+                seleccionada. Solo “Otro” usa costo manual.
+              </InfoBox>
+
+              {form.caratula === "Otro" && (
+                <NumberField
+                  label="Costo carátula manual"
+                  suffix="$/m²"
+                  value={form.costoCaratulaM2}
+                  onChange={(value) => updateField("costoCaratulaM2", value)}
+                />
+              )}
 
               <SelectField
                 label="Iluminación"
@@ -159,13 +176,6 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
                 onChange={(value) =>
                   updateField("iluminacion", value as FormState["iluminacion"])
                 }
-              />
-
-              <NumberField
-                label="Costo carátula"
-                suffix="$/m²"
-                value={form.costoCaratulaM2}
-                onChange={(value) => updateField("costoCaratulaM2", value)}
               />
 
               <NumberField
@@ -182,7 +192,10 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
                 value={form.incluyeInstalacion}
                 options={["SI", "NO"]}
                 onChange={(value) =>
-                  updateField("incluyeInstalacion", value as FormState["incluyeInstalacion"])
+                  updateField(
+                    "incluyeInstalacion",
+                    value as FormState["incluyeInstalacion"]
+                  )
                 }
               />
 
@@ -264,6 +277,10 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
               />
             </FieldGroup>
 
+            <FieldGroup title="Configuración de carátula">
+              <CaratulaInfo caratula={form.caratula} />
+            </FieldGroup>
+
             {form.iluminacion === "Lámparas LED" && (
               <FieldGroup title="Configuración de lámpara">
                 <NumberField
@@ -281,8 +298,7 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
                 />
 
                 <InfoBox>
-                  La lámpara aplicada se define automáticamente según la altura:
-                  menor a 1.20 m usa 0.60 m; desde 1.20 m usa 1.20 m.
+                  Lámparas LED no usan fuente. Se cargan directo como pieza.
                 </InfoBox>
               </FieldGroup>
             )}
@@ -352,7 +368,9 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
             <FieldGroup title="Observaciones">
               <textarea
                 value={form.observaciones}
-                onChange={(event) => updateField("observaciones", event.target.value)}
+                onChange={(event) =>
+                  updateField("observaciones", event.target.value)
+                }
                 className="min-h-24 w-full rounded-xl border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm outline-none focus:border-white"
                 placeholder="Texto libre para aclaraciones internas o de cliente..."
               />
@@ -464,8 +482,8 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
 
             <tbody>
               {Object.entries(groupedPartidas).map(([group, lines]) => (
-                <>
-                  <tr key={`${group}-header`} className="bg-neutral-800/60">
+                <Fragment key={group}>
+                  <tr className="bg-neutral-800/60">
                     <td
                       colSpan={7}
                       className="px-3 py-2 text-xs font-bold uppercase text-yellow-300"
@@ -498,7 +516,7 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
                       </td>
                     </tr>
                   ))}
-                </>
+                </Fragment>
               ))}
             </tbody>
           </table>
@@ -534,6 +552,23 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
       </section>
     </div>
   );
+}
+
+function CaratulaInfo({ caratula }: { caratula: string }) {
+  const descriptions: Record<string, string> = {
+    "Lona backlight impresa":
+      "Usa LONA_BACKLIGHT + IMPRESION_LONA_HP.",
+    "Lona backlight rotulada":
+      "Usa LONA_BACKLIGHT + VINIL_CORTE_TRANSLUCIDO + ROTULADO_VINIL.",
+    "Acrílico rotulado":
+      "Usa ACRILICO_BLANCO_LECHOSO + VINIL_CORTE_TRANSLUCIDO + ROTULADO_VINIL.",
+    "Acrílico impreso":
+      "Usa ACRILICO_BLANCO_LECHOSO + IMPRESION_ACRILICO.",
+    Policarbonato: "Usa POLICARBONATO.",
+    Otro: "Usa costo manual de carátula por m².",
+  };
+
+  return <InfoBox>{descriptions[caratula] || "Configuración no definida."}</InfoBox>;
 }
 
 function SectionHeader({
