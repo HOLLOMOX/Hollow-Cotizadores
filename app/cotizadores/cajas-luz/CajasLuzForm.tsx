@@ -1,147 +1,19 @@
 "use client";
 
 import { useMemo, useState } from "react";
-
-type CostRow = {
-  sku: string;
-  name: string;
-  unit: string;
-  cost: number;
-  sale_price: number | null;
-};
-
-type FuenteResult = {
-  label: string;
-  qty30: number;
-  qty60: number;
-  qty100: number;
-};
-
-type Partida = [string, number, string, number];
-
-const MODULOS_POR_TIRA = 20;
-
-const WATTS_MODULO_NORMAL = 0.72;
-const WATTS_MODULO_ULTRA = 1.5;
-const WATTS_MODULO_MICRO = 0.2;
-
-function n(value: string) {
-  const num = Number(value);
-  return Number.isFinite(num) ? num : 0;
-}
-
-function money(value: number) {
-  return new Intl.NumberFormat("es-MX", {
-    style: "currency",
-    currency: "MXN",
-  }).format(Number.isFinite(value) ? value : 0);
-}
-
-function fuentePorConsumo(consumo: number): FuenteResult {
-  if (consumo <= 0) {
-    return { label: "Sin fuente", qty30: 0, qty60: 0, qty100: 0 };
-  }
-
-  if (consumo <= 21) {
-    return { label: "1 × Fuente 30 W", qty30: 1, qty60: 0, qty100: 0 };
-  }
-
-  if (consumo <= 42) {
-    return { label: "1 × Fuente 60 W", qty30: 0, qty60: 1, qty100: 0 };
-  }
-
-  const qty100 = Math.ceil(consumo / 70);
-
-  return {
-    label: `${qty100} × Fuente 100 W`,
-    qty30: 0,
-    qty60: 0,
-    qty100,
-  };
-}
-
-function reglaCanto({
-  tipoCaja,
-  iluminacion,
-}: {
-  tipoCaja: string;
-  iluminacion: string;
-}) {
-  if (
-    tipoCaja === "Doble vista" ||
-    tipoCaja === "Bandera" ||
-    tipoCaja === "Paleta"
-  ) {
-    return {
-      cantoCm: 40,
-      desarrolloLaminaCm: 48,
-      label: "Doble vista / bandera / paleta",
-    };
-  }
-
-  if (iluminacion === "Lámparas LED") {
-    return {
-      cantoCm: 22,
-      desarrolloLaminaCm: 30,
-      label: "Caja con lámparas LED",
-    };
-  }
-
-  if (
-    iluminacion === "Módulos LED normales" ||
-    iluminacion === "Módulos LED ultra brillantes" ||
-    iluminacion === "Micro LEDs"
-  ) {
-    return {
-      cantoCm: 10,
-      desarrolloLaminaCm: 18,
-      label: "Caja con módulos LED",
-    };
-  }
-
-  return {
-    cantoCm: 10,
-    desarrolloLaminaCm: 18,
-    label: "Caja sin iluminación",
-  };
-}
-
-function reglaTubular({
-  tipoCaja,
-  areaBase,
-}: {
-  tipoCaja: string;
-  areaBase: number;
-}) {
-  if (
-    tipoCaja === "Bandera" ||
-    tipoCaja === "Paleta" ||
-    tipoCaja === "Doble vista" ||
-    areaBase > 6
-  ) {
-    return {
-      sku: "TUBULAR_1X1",
-      label: "Tubular 1 x 1",
-      varillaSoldaduraPorInsercion: 0.5,
-    };
-  }
-
-  if (tipoCaja === "Suajada" || areaBase < 1) {
-    return {
-      sku: "TUBULAR_1_2",
-      label: "Tubular 1/2 x 1/2",
-      varillaSoldaduraPorInsercion: 1 / 3,
-    };
-  }
-
-  return {
-    sku: "TUBULAR_3_4",
-    label: "Tubular 3/4 x 3/4",
-    varillaSoldaduraPorInsercion: 1 / 3,
-  };
-}
+import type { CostRow, FormState } from "./_lib/types";
+import {
+  CARATULAS,
+  DEFAULT_FORM,
+  ILUMINACIONES,
+  TIPOS_CAJA,
+} from "./_lib/rules";
+import { calculateCajaLuz } from "./_lib/calculator";
+import { fixed, money } from "./_lib/format";
 
 export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
+  const [form, setForm] = useState<FormState>(DEFAULT_FORM);
+
   const costMap = useMemo(() => {
     const map = new Map<string, number>();
 
@@ -152,614 +24,697 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
     return map;
   }, [costRows]);
 
-  const [cliente, setCliente] = useState("");
-  const [proyecto, setProyecto] = useState("Caja de luz");
+  const result = useMemo(() => {
+    return calculateCajaLuz(form, costMap);
+  }, [form, costMap]);
 
-  const [ancho, setAncho] = useState("1");
-  const [alto, setAlto] = useState("1");
-  const [cantidad, setCantidad] = useState("1");
+  function updateField<K extends keyof FormState>(
+    key: K,
+    value: FormState[K]
+  ) {
+    setForm((current) => ({
+      ...current,
+      [key]: value,
+    }));
+  }
 
-  const [usarCantoAutomatico, setUsarCantoAutomatico] = useState(true);
-  const [cantoCmManual, setCantoCmManual] = useState("12");
+  const groupedPartidas = result.partidas.reduce<Record<string, typeof result.partidas>>(
+    (groups, line) => {
+      if (!groups[line.grupo]) {
+        groups[line.grupo] = [];
+      }
 
-  const [tipoCaja, setTipoCaja] = useState("Una vista");
-  const [frente, setFrente] = useState("Lona backlight");
-  const [iluminacion, setIluminacion] = useState("Lámparas LED");
-
-  const [costoFrenteM2, setCostoFrenteM2] = useState("0");
-  const [manoObraM2, setManoObraM2] = useState("0");
-
-  const [separacionLamparasM, setSeparacionLamparasM] = useState("0.30");
-  const [wattsPorLampara, setWattsPorLampara] = useState("18");
-
-  const [tirasPorM2Normal, setTirasPorM2Normal] = useState("12");
-  const [tirasPorM2Ultra, setTirasPorM2Ultra] = useState("12");
-  const [tirasPorM2Micro, setTirasPorM2Micro] = useState("20");
-
-  const [instalacion, setInstalacion] = useState("0");
-  const [extras, setExtras] = useState("0");
-  const [margen, setMargen] = useState("40");
-
-  const laminaGalvCosto = costMap.get("LAMINA_GALV_CAL26") ?? 0;
-
-  const lampara60Costo = costMap.get("LAMPARA_LED_60CM") ?? 0;
-  const lampara120Costo = costMap.get("LAMPARA_LED_120CM") ?? 0;
-
-  const tiraNormalCosto = costMap.get("TIRA_LED_NORMAL") ?? 0;
-  const tiraUltraCosto = costMap.get("TIRA_LED_ULTRA") ?? 0;
-  const tiraMicroCosto = costMap.get("TIRA_MICRO_LED") ?? 0;
-
-  const fuente30 = costMap.get("FUENTE_30W") ?? 0;
-  const fuente60 = costMap.get("FUENTE_60W") ?? 0;
-  const fuente100 = costMap.get("FUENTE_100W") ?? 0;
-
-  const tubular12Costo = costMap.get("TUBULAR_1_2") ?? 0;
-  const tubular34Costo = costMap.get("TUBULAR_3_4") ?? 0;
-  const tubular1x1Costo = costMap.get("TUBULAR_1X1") ?? 0;
-  const soldaduraCosto = costMap.get("SOLDADURA_6013") ?? 0;
-
-  const calc = useMemo(() => {
-    const anchoM = n(ancho);
-    const altoM = n(alto);
-    const qty = Math.max(n(cantidad), 1);
-
-    const vistas = tipoCaja === "Doble vista" ? 2 : 1;
-
-    const regla = reglaCanto({ tipoCaja, iluminacion });
-
-    const cantoCm = usarCantoAutomatico ? regla.cantoCm : n(cantoCmManual);
-    const cantoM = cantoCm / 100;
-
-    const desarrolloLaminaCm = usarCantoAutomatico
-      ? regla.desarrolloLaminaCm
-      : cantoCm + 8;
-
-    const desarrolloLaminaM = desarrolloLaminaCm / 100;
-
-    const areaBase = anchoM * altoM;
-    const areaFrente = anchoM * altoM * qty * vistas;
-    const areaRespaldo = anchoM * altoM * qty;
-    const perimetro = 2 * (anchoM + altoM) * qty;
-
-    const areaCantoVisible = perimetro * cantoM;
-    const areaLaminaCanto = perimetro * desarrolloLaminaM;
-    const areaLaminaTotal = areaRespaldo + areaLaminaCanto;
-
-    const costoFrente = areaFrente * n(costoFrenteM2);
-    const costoLamina = areaLaminaTotal * laminaGalvCosto;
-    const costoManoObra = areaFrente * n(manoObraM2);
-
-    const tubular = reglaTubular({ tipoCaja, areaBase });
-
-    const refuerzosVerticalesPorCaja = Math.max(Math.ceil(anchoM / 1) - 1, 0);
-    const refuerzosHorizontalesPorCaja = Math.max(Math.ceil(altoM / 1) - 1, 0);
-
-    const refuerzoVerticalMl = refuerzosVerticalesPorCaja * altoM * qty;
-    const refuerzoHorizontalMl = refuerzosHorizontalesPorCaja * anchoM * qty;
-    const refuerzosMl = refuerzoVerticalMl + refuerzoHorizontalMl;
-
-    const tubularMl = perimetro + refuerzosMl;
-    const tramosTubular = Math.ceil(tubularMl / 6);
-
-    const tubularCostoUnitario =
-      tubular.sku === "TUBULAR_1_2"
-        ? tubular12Costo
-        : tubular.sku === "TUBULAR_3_4"
-          ? tubular34Costo
-          : tubular1x1Costo;
-
-    const costoTubular = tramosTubular * tubularCostoUnitario;
-
-    const inserciones =
-      4 * qty +
-      refuerzosVerticalesPorCaja * 2 * qty +
-      refuerzosHorizontalesPorCaja * 2 * qty;
-
-    const varillasSoldadura = Math.ceil(
-      inserciones * tubular.varillaSoldaduraPorInsercion
-    );
-
-    const costoSoldadura = varillasSoldadura * soldaduraCosto;
-
-    let iluminacionLabel = "Sin iluminación";
-    let iluminacionCantidad = 0;
-    let iluminacionUnidad = "PIEZA";
-    let modulosTotales = 0;
-    let wattsPorModulo = 0;
-    let consumo = 0;
-    let costoIluminacion = 0;
-    let usaFuente = false;
-
-    if (iluminacion === "Lámparas LED") {
-      const usaLampara120 = anchoM > 1.2;
-      const largoLamparaM = usaLampara120 ? 1.2 : 0.6;
-      const costoLampara = usaLampara120 ? lampara120Costo : lampara60Costo;
-      const nombreLampara = usaLampara120
-        ? "Lámpara LED 120 cm"
-        : "Lámpara LED 60 cm";
-
-      const lamparasPorLinea = Math.max(Math.ceil(anchoM / largoLamparaM), 1);
-
-      const lineas = Math.max(
-        Math.ceil(altoM / Math.max(n(separacionLamparasM), 0.01)),
-        1
-      );
-
-      iluminacionCantidad = lamparasPorLinea * lineas * qty * vistas;
-      iluminacionUnidad = "PIEZA";
-      iluminacionLabel = nombreLampara;
-      consumo = iluminacionCantidad * n(wattsPorLampara);
-      costoIluminacion = iluminacionCantidad * costoLampara;
-      usaFuente = false;
-    }
-
-    if (iluminacion === "Módulos LED normales") {
-      iluminacionCantidad = Math.ceil(areaFrente * n(tirasPorM2Normal));
-      iluminacionUnidad = "TIRA C/20";
-      iluminacionLabel = "Tiras de módulos LED normales";
-      wattsPorModulo = WATTS_MODULO_NORMAL;
-      modulosTotales = iluminacionCantidad * MODULOS_POR_TIRA;
-      consumo = modulosTotales * wattsPorModulo;
-      costoIluminacion = iluminacionCantidad * tiraNormalCosto;
-      usaFuente = true;
-    }
-
-    if (iluminacion === "Módulos LED ultra brillantes") {
-      iluminacionCantidad = Math.ceil(areaFrente * n(tirasPorM2Ultra));
-      iluminacionUnidad = "TIRA C/20";
-      iluminacionLabel = "Tiras de módulos LED ultra brillantes";
-      wattsPorModulo = WATTS_MODULO_ULTRA;
-      modulosTotales = iluminacionCantidad * MODULOS_POR_TIRA;
-      consumo = modulosTotales * wattsPorModulo;
-      costoIluminacion = iluminacionCantidad * tiraUltraCosto;
-      usaFuente = true;
-    }
-
-    if (iluminacion === "Micro LEDs") {
-      iluminacionCantidad = Math.ceil(areaFrente * n(tirasPorM2Micro));
-      iluminacionUnidad = "TIRA C/20";
-      iluminacionLabel = "Tiras de micro LED";
-      wattsPorModulo = WATTS_MODULO_MICRO;
-      modulosTotales = iluminacionCantidad * MODULOS_POR_TIRA;
-      consumo = modulosTotales * wattsPorModulo;
-      costoIluminacion = iluminacionCantidad * tiraMicroCosto;
-      usaFuente = true;
-    }
-
-    const fuente = usaFuente
-      ? fuentePorConsumo(consumo)
-      : { label: "No aplica", qty30: 0, qty60: 0, qty100: 0 };
-
-    const costoFuente = usaFuente
-      ? fuente.qty30 * fuente30 +
-        fuente.qty60 * fuente60 +
-        fuente.qty100 * fuente100
-      : 0;
-
-    const costoInstalacion = n(instalacion);
-    const costoExtras = n(extras);
-
-    const costoTotal =
-      costoFrente +
-      costoLamina +
-      costoTubular +
-      costoSoldadura +
-      costoIluminacion +
-      costoFuente +
-      costoManoObra +
-      costoInstalacion +
-      costoExtras;
-
-    const margenNum = n(margen);
-
-    const precioVenta =
-      margenNum >= 100 ? costoTotal : costoTotal / (1 - margenNum / 100);
-
-    const utilidad = precioVenta - costoTotal;
-
-    return {
-      vistas,
-      anchoM,
-      altoM,
-      areaBase,
-      areaFrente,
-      areaRespaldo,
-      perimetro,
-      cantoCm,
-      cantoM,
-      desarrolloLaminaCm,
-      desarrolloLaminaM,
-      areaCantoVisible,
-      areaLaminaCanto,
-      areaLaminaTotal,
-      reglaCantoLabel: regla.label,
-
-      tubularLabel: tubular.label,
-      tubularMl,
-      tramosTubular,
-      refuerzosVerticalesPorCaja,
-      refuerzosHorizontalesPorCaja,
-      refuerzosMl,
-      inserciones,
-      varillasSoldadura,
-      costoTubular,
-      costoSoldadura,
-
-      iluminacionLabel,
-      iluminacionCantidad,
-      iluminacionUnidad,
-      modulosTotales,
-      wattsPorModulo,
-      consumo,
-      usaFuente,
-      fuente,
-      costoFrente,
-      costoLamina,
-      costoIluminacion,
-      costoFuente,
-      costoManoObra,
-      costoInstalacion,
-      costoExtras,
-      costoTotal,
-      precioVenta,
-      utilidad,
-      margenNum,
-    };
-  }, [
-    ancho,
-    alto,
-    cantidad,
-    tipoCaja,
-    iluminacion,
-    usarCantoAutomatico,
-    cantoCmManual,
-    costoFrenteM2,
-    manoObraM2,
-    separacionLamparasM,
-    wattsPorLampara,
-    tirasPorM2Normal,
-    tirasPorM2Ultra,
-    tirasPorM2Micro,
-    instalacion,
-    extras,
-    margen,
-    laminaGalvCosto,
-    lampara60Costo,
-    lampara120Costo,
-    tiraNormalCosto,
-    tiraUltraCosto,
-    tiraMicroCosto,
-    fuente30,
-    fuente60,
-    fuente100,
-    tubular12Costo,
-    tubular34Costo,
-    tubular1x1Costo,
-    soldaduraCosto,
-  ]);
-
-  const partidasBase: Partida[] = [
-    ["Frente " + frente, calc.areaFrente, "m²", calc.costoFrente],
-    [
-      "Lámina respaldo",
-      calc.areaRespaldo,
-      "m²",
-      calc.areaRespaldo * laminaGalvCosto,
-    ],
-    [
-      "Lámina canto",
-      calc.areaLaminaCanto,
-      "m²",
-      calc.areaLaminaCanto * laminaGalvCosto,
-    ],
-    [calc.tubularLabel, calc.tramosTubular, "TRAMO 6M", calc.costoTubular],
-    [
-      "Soldadura 6013",
-      calc.varillasSoldadura,
-      "VARILLA",
-      calc.costoSoldadura,
-    ],
-    [
-      calc.iluminacionLabel,
-      calc.iluminacionCantidad,
-      calc.iluminacionUnidad,
-      calc.costoIluminacion,
-    ],
-  ];
-
-  const partidaFuente: Partida = [
-    calc.fuente.label,
-    calc.fuente.qty30 + calc.fuente.qty60 + calc.fuente.qty100,
-    "PIEZA",
-    calc.costoFuente,
-  ];
-
-  const partidasFinales: Partida[] = [
-    ["Mano de obra", calc.areaFrente, "m²", calc.costoManoObra],
-    ["Instalación", 1, "SERVICIO", calc.costoInstalacion],
-    ["Extras", 1, "LOTE", calc.costoExtras],
-  ];
-
-  const partidas = calc.usaFuente
-    ? [...partidasBase, partidaFuente, ...partidasFinales]
-    : [...partidasBase, ...partidasFinales];
+      groups[line.grupo].push(line);
+      return groups;
+    },
+    {}
+  );
 
   return (
-    <div className="mt-8 grid gap-6 lg:grid-cols-12">
-      <section className="rounded-2xl border border-neutral-800 bg-neutral-900 p-6 lg:col-span-5">
-        <h2 className="text-xl font-medium">Datos</h2>
+    <div className="mt-8 space-y-6">
+      <div className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4">
+        <div className="text-center">
+          <h2 className="text-lg font-bold tracking-wide text-white">
+            PANTERA PUBLICIDAD | COTIZADOR MAESTRO
+          </h2>
+          <p className="mt-1 text-sm font-semibold text-yellow-400">
+            CAJAS DE LUZ · CAPTURA BÁSICA PARA VENDEDORES
+          </p>
+          <p className="mt-3 rounded-xl bg-yellow-100 px-4 py-2 text-xs font-semibold italic text-neutral-900">
+            Captura solo los campos necesarios. Los cálculos internos se generan
+            automáticamente.
+          </p>
+        </div>
+      </div>
 
-        <div className="mt-5 grid gap-4 md:grid-cols-2">
-          <Input label="Cliente" value={cliente} setValue={setCliente} />
-          <Input label="Proyecto" value={proyecto} setValue={setProyecto} />
+      <div className="grid gap-6 xl:grid-cols-12">
+        <section className="rounded-2xl border border-neutral-800 bg-neutral-900 xl:col-span-4">
+          <SectionHeader number="01" title="Datos y configuración del proyecto" />
 
-          <Input label="Ancho m" value={ancho} setValue={setAncho} type="number" />
-          <Input label="Alto m" value={alto} setValue={setAlto} type="number" />
-          <Input label="Cantidad" value={cantidad} setValue={setCantidad} type="number" />
-
-          <label className="flex items-center gap-3 text-sm text-neutral-300">
-            <input
-              type="checkbox"
-              checked={usarCantoAutomatico}
-              onChange={(event) => setUsarCantoAutomatico(event.target.checked)}
-              className="h-4 w-4"
-            />
-            Canto automático
-          </label>
-
-          {!usarCantoAutomatico && (
-            <Input
-              label="Canto manual cm"
-              value={cantoCmManual}
-              setValue={setCantoCmManual}
-              type="number"
-            />
-          )}
-
-          <Select
-            label="Tipo de caja"
-            value={tipoCaja}
-            setValue={setTipoCaja}
-            options={["Una vista", "Doble vista", "Bandera", "Paleta", "Suajada"]}
-          />
-
-          <Select
-            label="Frente"
-            value={frente}
-            setValue={setFrente}
-            options={[
-              "Lona backlight",
-              "Acrílico blanco lechoso",
-              "Policarbonato",
-              "Otro",
-            ]}
-          />
-
-          <Select
-            label="Iluminación"
-            value={iluminacion}
-            setValue={setIluminacion}
-            options={[
-              "Lámparas LED",
-              "Módulos LED normales",
-              "Módulos LED ultra brillantes",
-              "Micro LEDs",
-              "Sin iluminación",
-            ]}
-          />
-
-          {iluminacion === "Lámparas LED" && (
-            <>
-              <Input
-                label="Separación lámparas m"
-                value={separacionLamparasM}
-                setValue={setSeparacionLamparasM}
-                type="number"
+          <div className="space-y-5 p-5">
+            <FieldGroup title="Datos generales">
+              <TextField
+                label="Cliente"
+                value={form.cliente}
+                onChange={(value) => updateField("cliente", value)}
               />
 
-              <Input
-                label="Watts por lámpara"
-                value={wattsPorLampara}
-                setValue={setWattsPorLampara}
-                type="number"
+              <TextField
+                label="Vendedor"
+                value={form.vendedor}
+                onChange={(value) => updateField("vendedor", value)}
               />
-            </>
-          )}
 
-          {iluminacion === "Módulos LED normales" && (
-            <Input
-              label="Tiras normales por m²"
-              value={tirasPorM2Normal}
-              setValue={setTirasPorM2Normal}
-              type="number"
+              <TextField
+                label="Proyecto"
+                value={form.proyecto}
+                onChange={(value) => updateField("proyecto", value)}
+              />
+            </FieldGroup>
+
+            <FieldGroup title="Medidas">
+              <SelectField
+                label="Tipo de caja"
+                value={form.tipoCaja}
+                options={TIPOS_CAJA}
+                onChange={(value) => updateField("tipoCaja", value as FormState["tipoCaja"])}
+              />
+
+              <NumberField
+                label="Cantidad de piezas"
+                suffix="pzas"
+                value={form.cantidad}
+                onChange={(value) => updateField("cantidad", value)}
+              />
+
+              <NumberField
+                label="Ancho"
+                suffix="m"
+                value={form.anchoM}
+                onChange={(value) => updateField("anchoM", value)}
+              />
+
+              <NumberField
+                label="Alto"
+                suffix="m"
+                value={form.altoM}
+                onChange={(value) => updateField("altoM", value)}
+              />
+
+              <NumberField
+                label="Vistas"
+                suffix="caras"
+                value={form.vistas}
+                onChange={(value) => updateField("vistas", value)}
+              />
+
+              <CheckboxField
+                label="Canto automático"
+                checked={form.usarCantoAutomatico}
+                onChange={(value) => updateField("usarCantoAutomatico", value)}
+              />
+
+              {!form.usarCantoAutomatico && (
+                <NumberField
+                  label="Canto manual"
+                  suffix="cm"
+                  value={form.cantoCmManual}
+                  onChange={(value) => updateField("cantoCmManual", value)}
+                />
+              )}
+            </FieldGroup>
+
+            <FieldGroup title="Carátula e iluminación">
+              <SelectField
+                label="Carátula"
+                value={form.caratula}
+                options={CARATULAS}
+                onChange={(value) => updateField("caratula", value as FormState["caratula"])}
+              />
+
+              <SelectField
+                label="Iluminación"
+                value={form.iluminacion}
+                options={ILUMINACIONES}
+                onChange={(value) =>
+                  updateField("iluminacion", value as FormState["iluminacion"])
+                }
+              />
+
+              <NumberField
+                label="Costo carátula"
+                suffix="$/m²"
+                value={form.costoCaratulaM2}
+                onChange={(value) => updateField("costoCaratulaM2", value)}
+              />
+
+              <NumberField
+                label="Mano de obra"
+                suffix="$/m²"
+                value={form.manoObraM2}
+                onChange={(value) => updateField("manoObraM2", value)}
+              />
+            </FieldGroup>
+
+            <FieldGroup title="Instalación y traslado">
+              <SelectField
+                label="Incluye instalación"
+                value={form.incluyeInstalacion}
+                options={["SI", "NO"]}
+                onChange={(value) =>
+                  updateField("incluyeInstalacion", value as FormState["incluyeInstalacion"])
+                }
+              />
+
+              <TextField
+                label="Altura / condición"
+                value={form.alturaCondicion}
+                onChange={(value) => updateField("alturaCondicion", value)}
+              />
+
+              <TextField
+                label="Traslado"
+                value={form.traslado}
+                onChange={(value) => updateField("traslado", value)}
+              />
+
+              <TextField
+                label="Diseño gráfico"
+                value={form.disenoGrafico}
+                onChange={(value) => updateField("disenoGrafico", value)}
+              />
+            </FieldGroup>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-neutral-800 bg-neutral-900 xl:col-span-4">
+          <SectionHeader title="Adicionales y configuración automática" />
+
+          <div className="space-y-5 p-5">
+            <FieldGroup title="Adicionales del proyecto">
+              <NumberField
+                label="Material extra"
+                suffix="$"
+                value={form.materialExtra}
+                onChange={(value) => updateField("materialExtra", value)}
+              />
+
+              <NumberField
+                label="Andamios"
+                suffix="$"
+                value={form.andamios}
+                onChange={(value) => updateField("andamios", value)}
+              />
+
+              <NumberField
+                label="Núm. de descolgadas"
+                suffix="pzas"
+                value={form.numeroDescolgadas}
+                onChange={(value) => updateField("numeroDescolgadas", value)}
+              />
+
+              <NumberField
+                label="Instalación"
+                suffix="$"
+                value={form.instalacion}
+                onChange={(value) => updateField("instalacion", value)}
+              />
+
+              <NumberField
+                label="Extras"
+                suffix="$"
+                value={form.extras}
+                onChange={(value) => updateField("extras", value)}
+              />
+            </FieldGroup>
+
+            <FieldGroup title="Personas y tiempos">
+              <NumberField
+                label="Personas fabricación"
+                suffix="personas"
+                value={form.personasFabricacion}
+                onChange={(value) => updateField("personasFabricacion", value)}
+              />
+
+              <NumberField
+                label="Personas instalación"
+                suffix="personas"
+                value={form.personasInstalacion}
+                onChange={(value) => updateField("personasInstalacion", value)}
+              />
+            </FieldGroup>
+
+            {form.iluminacion === "Lámparas LED" && (
+              <FieldGroup title="Configuración de lámpara">
+                <NumberField
+                  label="Separación de lámparas"
+                  suffix="m"
+                  value={form.separacionLamparasM}
+                  onChange={(value) => updateField("separacionLamparasM", value)}
+                />
+
+                <NumberField
+                  label="Watts por lámpara"
+                  suffix="W"
+                  value={form.wattsPorLampara}
+                  onChange={(value) => updateField("wattsPorLampara", value)}
+                />
+
+                <InfoBox>
+                  La lámpara aplicada se define automáticamente según la altura:
+                  menor a 1.20 m usa 0.60 m; desde 1.20 m usa 1.20 m.
+                </InfoBox>
+              </FieldGroup>
+            )}
+
+            {form.iluminacion === "Módulos LED normales" && (
+              <FieldGroup title="Cálculo LED normal">
+                <NumberField
+                  label="Tiras normales por m²"
+                  suffix="tiras/m²"
+                  value={form.tirasPorM2Normal}
+                  onChange={(value) => updateField("tirasPorM2Normal", value)}
+                />
+
+                <InfoBox>
+                  Cada tira trae 20 módulos. Cada módulo normal consume 0.72 W.
+                </InfoBox>
+              </FieldGroup>
+            )}
+
+            {form.iluminacion === "Módulos LED ultra brillantes" && (
+              <FieldGroup title="Cálculo LED ultrabrillante">
+                <NumberField
+                  label="Tiras ultra por m²"
+                  suffix="tiras/m²"
+                  value={form.tirasPorM2Ultra}
+                  onChange={(value) => updateField("tirasPorM2Ultra", value)}
+                />
+
+                <InfoBox>
+                  Cada tira trae 20 módulos. Cada módulo ultrabrillante consume
+                  1.5 W.
+                </InfoBox>
+              </FieldGroup>
+            )}
+
+            {form.iluminacion === "Micro LEDs" && (
+              <FieldGroup title="Cálculo micro LED">
+                <NumberField
+                  label="Tiras micro por m²"
+                  suffix="tiras/m²"
+                  value={form.tirasPorM2Micro}
+                  onChange={(value) => updateField("tirasPorM2Micro", value)}
+                />
+
+                <InfoBox>
+                  Cada tira trae 20 módulos. Cada micro LED consume 0.2 W.
+                </InfoBox>
+              </FieldGroup>
+            )}
+
+            <FieldGroup title="Precio">
+              <NumberField
+                label="Margen"
+                suffix="%"
+                value={form.margen}
+                onChange={(value) => updateField("margen", value)}
+              />
+
+              <NumberField
+                label="IVA"
+                suffix="%"
+                value={form.ivaPorcentaje}
+                onChange={(value) => updateField("ivaPorcentaje", value)}
+              />
+            </FieldGroup>
+
+            <FieldGroup title="Observaciones">
+              <textarea
+                value={form.observaciones}
+                onChange={(event) => updateField("observaciones", event.target.value)}
+                className="min-h-24 w-full rounded-xl border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm outline-none focus:border-white"
+                placeholder="Texto libre para aclaraciones internas o de cliente..."
+              />
+            </FieldGroup>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-neutral-800 bg-neutral-900 xl:col-span-4">
+          <SectionHeader number="02" title="Resultado para cotizar" />
+
+          <div className="space-y-5 p-5">
+            <div className="rounded-2xl border border-neutral-800 bg-neutral-950 p-5">
+              <p className="text-center text-xs font-semibold uppercase tracking-wide text-yellow-400">
+                Resumen simple para el vendedor
+              </p>
+
+              <div className="mt-5 space-y-3">
+                <ResultRow
+                  label="Tiempo real de fabricación"
+                  value={`${result.tiempos.fabricacionHoras} h`}
+                />
+                <ResultRow
+                  label="Tiempo real de instalación"
+                  value={`${result.tiempos.instalacionHoras} h`}
+                />
+                <ResultRow
+                  label="Costo directo"
+                  value={money(result.costos.costoDirecto)}
+                />
+                <ResultRow
+                  label="Precio a cotizar S/IVA"
+                  value={money(result.costos.precioSinIva)}
+                />
+                <ResultRow label="IVA" value={money(result.costos.iva)} />
+              </div>
+
+              <div className="mt-5 rounded-xl bg-red-700 px-4 py-4 text-white">
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-sm font-bold uppercase">
+                    Total con IVA
+                  </span>
+                  <span className="text-2xl font-black">
+                    {money(result.costos.totalConIva)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <ValidationCard title="Estado del precio" value={result.validations.precio} />
+            <ValidationCard
+              title="Validación de materiales"
+              value={result.validations.material}
             />
-          )}
-
-          {iluminacion === "Módulos LED ultra brillantes" && (
-            <Input
-              label="Tiras ultra por m²"
-              value={tirasPorM2Ultra}
-              setValue={setTirasPorM2Ultra}
-              type="number"
+            <ValidationCard
+              title="Validación de servicios especiales"
+              value={result.validations.servicios}
             />
-          )}
-
-          {iluminacion === "Micro LEDs" && (
-            <Input
-              label="Tiras micro por m²"
-              value={tirasPorM2Micro}
-              setValue={setTirasPorM2Micro}
-              type="number"
+            <ValidationCard
+              title="Validación de impresión"
+              value={result.validations.impresion}
             />
-          )}
 
-          <Input
-            label="Frente costo m²"
-            value={costoFrenteM2}
-            setValue={setCostoFrenteM2}
-            type="number"
-          />
+            <div className="grid grid-cols-2 gap-3">
+              <MiniMetric
+                title="Área frente"
+                value={`${fixed(result.medidas.areaFrenteM2)} m²`}
+              />
+              <MiniMetric
+                title="Canto"
+                value={`${fixed(result.medidas.cantoCm)} cm`}
+              />
+              <MiniMetric
+                title="Lámina total"
+                value={`${fixed(result.lamina.areaTotalM2)} m²`}
+              />
+              <MiniMetric
+                title="Tubular"
+                value={`${result.estructura.tramosTubular} tramos`}
+              />
+              <MiniMetric
+                title="Iluminación"
+                value={`${result.iluminacion.cantidad} ${result.iluminacion.unidad}`}
+              />
+              <MiniMetric
+                title="Fuente"
+                value={result.iluminacion.fuente.label}
+              />
+            </div>
+          </div>
+        </section>
+      </div>
 
-          <Input
-            label="Mano de obra m²"
-            value={manoObraM2}
-            setValue={setManoObraM2}
-            type="number"
-          />
+      <section className="rounded-2xl border border-neutral-800 bg-neutral-900">
+        <SectionHeader title="Detalle de costos internos" />
 
-          <Input label="Instalación" value={instalacion} setValue={setInstalacion} type="number" />
-          <Input label="Extras" value={extras} setValue={setExtras} type="number" />
-          <Input label="Margen %" value={margen} setValue={setMargen} type="number" />
+        <div className="overflow-x-auto p-5">
+          <table className="w-full min-w-[900px] border-collapse text-sm">
+            <thead>
+              <tr className="border-b border-neutral-700 bg-neutral-950 text-xs uppercase tracking-wider text-neutral-400">
+                <th className="px-3 py-3 text-left">Grupo</th>
+                <th className="px-3 py-3 text-left">Concepto</th>
+                <th className="px-3 py-3 text-left">SKU</th>
+                <th className="px-3 py-3 text-right">Cantidad</th>
+                <th className="px-3 py-3 text-left">Unidad</th>
+                <th className="px-3 py-3 text-right">Costo unitario</th>
+                <th className="px-3 py-3 text-right">Total</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {Object.entries(groupedPartidas).map(([group, lines]) => (
+                <>
+                  <tr key={`${group}-header`} className="bg-neutral-800/60">
+                    <td
+                      colSpan={7}
+                      className="px-3 py-2 text-xs font-bold uppercase text-yellow-300"
+                    >
+                      {group}
+                    </td>
+                  </tr>
+
+                  {lines.map((line, index) => (
+                    <tr
+                      key={`${line.grupo}-${line.concepto}-${index}`}
+                      className="border-b border-neutral-800"
+                    >
+                      <td className="px-3 py-3 text-neutral-500">{line.grupo}</td>
+                      <td className="px-3 py-3 text-white">{line.concepto}</td>
+                      <td className="px-3 py-3 text-neutral-500">
+                        {line.sku || "—"}
+                      </td>
+                      <td className="px-3 py-3 text-right">
+                        {fixed(line.cantidad)}
+                      </td>
+                      <td className="px-3 py-3 text-neutral-400">
+                        {line.unidad}
+                      </td>
+                      <td className="px-3 py-3 text-right">
+                        {money(line.costoUnitario)}
+                      </td>
+                      <td className="px-3 py-3 text-right font-semibold">
+                        {money(line.total)}
+                      </td>
+                    </tr>
+                  ))}
+                </>
+              ))}
+            </tbody>
+          </table>
         </div>
       </section>
 
-      <section className="rounded-2xl border border-neutral-800 bg-neutral-900 p-6 lg:col-span-7">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div>
-            <h2 className="text-xl font-medium">Resultado</h2>
-            <p className="mt-1 text-sm text-neutral-400">
-              {cliente || "Sin cliente"} · {proyecto}
+      <section className="rounded-2xl border border-neutral-800 bg-neutral-900">
+        <SectionHeader title="Cotización para copiar" />
+
+        <div className="p-5">
+          <div className="rounded-2xl border border-neutral-700 bg-neutral-950 p-4">
+            <p className="text-sm leading-7 text-neutral-200">
+              {result.textoCotizacion}
             </p>
           </div>
 
-          <div className="rounded-2xl border border-neutral-800 bg-neutral-950 p-4 text-right">
-            <p className="text-sm text-neutral-500">Precio sugerido</p>
-            <p className="mt-1 text-3xl font-semibold">
-              {money(calc.precioVenta)}
-            </p>
+          <div className="mt-4 grid gap-3 md:grid-cols-4">
+            <MiniMetric
+              title="Precio S/IVA"
+              value={money(result.costos.precioSinIva)}
+            />
+            <MiniMetric title="IVA" value={money(result.costos.iva)} />
+            <MiniMetric
+              title="Total C/IVA"
+              value={money(result.costos.totalConIva)}
+            />
+            <MiniMetric
+              title="Utilidad"
+              value={money(result.costos.utilidad)}
+            />
           </div>
         </div>
-
-        <div className="mt-6 grid gap-3 md:grid-cols-4">
-          <Card title="Área frente" value={`${calc.areaFrente.toFixed(2)} m²`} />
-          <Card title="Perímetro" value={`${calc.perimetro.toFixed(2)} ml`} />
-          <Card title="Canto" value={`${calc.cantoCm.toFixed(2)} cm`} />
-          <Card title="Desarrollo lámina" value={`${calc.desarrolloLaminaCm.toFixed(2)} cm`} />
-        </div>
-
-        <div className="mt-6 grid gap-3 md:grid-cols-4">
-          <Card title="Respaldo" value={`${calc.areaRespaldo.toFixed(2)} m²`} />
-          <Card title="Lámina canto" value={`${calc.areaLaminaCanto.toFixed(2)} m²`} />
-          <Card title="Lámina total" value={`${calc.areaLaminaTotal.toFixed(2)} m²`} />
-          <Card title="Regla canto" value={calc.reglaCantoLabel} />
-        </div>
-
-        <div className="mt-6 grid gap-3 md:grid-cols-4">
-          <Card title="Tubular" value={calc.tubularLabel} />
-          <Card title="Tubular ml" value={`${calc.tubularMl.toFixed(2)} ml`} />
-          <Card title="Tramos 6m" value={`${calc.tramosTubular}`} />
-          <Card title="Soldadura" value={`${calc.varillasSoldadura} varillas`} />
-        </div>
-
-        <div className="mt-6 grid gap-3 md:grid-cols-4">
-          <Card title="Iluminación" value={calc.iluminacionLabel} />
-          <Card title="Cantidad luz" value={`${calc.iluminacionCantidad} ${calc.iluminacionUnidad}`} />
-          <Card title="Módulos" value={`${calc.modulosTotales} módulos`} />
-          <Card title="Consumo" value={`${calc.consumo.toFixed(1)} W`} />
-        </div>
-
-        <div className="mt-6 grid gap-3 md:grid-cols-4">
-          <Card title="Fuente" value={calc.fuente.label} />
-          <Card
-            title="Watts módulo"
-            value={calc.wattsPorModulo > 0 ? `${calc.wattsPorModulo} W` : "No aplica"}
-          />
-          <Card title="Vistas" value={`${calc.vistas}`} />
-          <Card title="Tipo" value={tipoCaja} />
-        </div>
-
-        <div className="mt-6 overflow-hidden rounded-2xl border border-neutral-800">
-          <div className="grid grid-cols-12 bg-neutral-950 px-4 py-3 text-xs uppercase tracking-wider text-neutral-500">
-            <div className="col-span-6">Concepto</div>
-            <div className="col-span-2 text-right">Cantidad</div>
-            <div className="col-span-2">Unidad</div>
-            <div className="col-span-2 text-right">Total</div>
-          </div>
-
-          <div className="divide-y divide-neutral-800">
-            {partidas.map(([concepto, cantidadPartida, unidad, total]) => (
-              <div key={concepto} className="grid grid-cols-12 px-4 py-3 text-sm">
-                <div className="col-span-6">{concepto}</div>
-                <div className="col-span-2 text-right">{Number(cantidadPartida).toFixed(2)}</div>
-                <div className="col-span-2 text-neutral-400">{unidad}</div>
-                <div className="col-span-2 text-right">{money(Number(total))}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-6 grid gap-3 md:grid-cols-3">
-          <Card title="Costo total" value={money(calc.costoTotal)} />
-          <Card title="Utilidad" value={money(calc.utilidad)} />
-          <Card title="Margen" value={`${calc.margenNum.toFixed(2)}%`} />
-        </div>
-
-        <p className="mt-6 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-100">
-          Paso 3: estructura con tubular y soldadura agregada. Falta agregar
-          pijas, cables, pintura, primer, thinner, lijas y tiempos de fabricación.
-        </p>
       </section>
     </div>
   );
 }
 
-function Input({
+function SectionHeader({
+  number,
+  title,
+}: {
+  number?: string;
+  title: string;
+}) {
+  return (
+    <div className="flex items-center gap-2 rounded-t-2xl bg-neutral-800 px-5 py-3">
+      {number && (
+        <span className="rounded bg-neutral-950 px-2 py-1 text-xs font-bold text-yellow-400">
+          {number}
+        </span>
+      )}
+      <h3 className="text-sm font-bold uppercase tracking-wide text-white">
+        {title}
+      </h3>
+    </div>
+  );
+}
+
+function FieldGroup({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-2xl border border-neutral-800 bg-neutral-950 p-4">
+      <h4 className="mb-4 text-xs font-bold uppercase tracking-wide text-yellow-400">
+        {title}
+      </h4>
+
+      <div className="grid gap-3">{children}</div>
+    </div>
+  );
+}
+
+function TextField({
   label,
   value,
-  setValue,
-  type = "text",
+  onChange,
 }: {
   label: string;
   value: string;
-  setValue: (value: string) => void;
-  type?: string;
+  onChange: (value: string) => void;
 }) {
   return (
-    <label className="text-sm text-neutral-300">
-      {label}
+    <label className="grid gap-1 text-sm">
+      <span className="text-neutral-400">{label}</span>
       <input
         value={value}
-        onChange={(event) => setValue(event.target.value)}
-        type={type}
-        step={type === "number" ? "0.01" : undefined}
-        className="mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-950 px-3 py-2 outline-none focus:border-white"
+        onChange={(event) => onChange(event.target.value)}
+        className="rounded-xl border border-neutral-700 bg-yellow-50 px-3 py-2 text-sm font-semibold text-neutral-950 outline-none focus:border-yellow-400"
       />
     </label>
   );
 }
 
-function Select({
+function NumberField({
+  label,
+  suffix,
+  value,
+  onChange,
+}: {
+  label: string;
+  suffix?: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="grid gap-1 text-sm">
+      <span className="text-neutral-400">{label}</span>
+
+      <div className="flex overflow-hidden rounded-xl border border-neutral-700 bg-yellow-50 focus-within:border-yellow-400">
+        <input
+          value={value}
+          type="number"
+          step="0.01"
+          onChange={(event) => onChange(event.target.value)}
+          className="min-w-0 flex-1 bg-transparent px-3 py-2 text-sm font-semibold text-neutral-950 outline-none"
+        />
+
+        {suffix && (
+          <span className="flex items-center bg-yellow-100 px-3 text-xs font-bold text-neutral-700">
+            {suffix}
+          </span>
+        )}
+      </div>
+    </label>
+  );
+}
+
+function SelectField({
   label,
   value,
-  setValue,
   options,
+  onChange,
 }: {
   label: string;
   value: string;
-  setValue: (value: string) => void;
-  options: string[];
+  options: readonly string[];
+  onChange: (value: string) => void;
 }) {
   return (
-    <label className="text-sm text-neutral-300">
-      {label}
+    <label className="grid gap-1 text-sm">
+      <span className="text-neutral-400">{label}</span>
+
       <select
         value={value}
-        onChange={(event) => setValue(event.target.value)}
-        className="mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-950 px-3 py-2 outline-none focus:border-white"
+        onChange={(event) => onChange(event.target.value)}
+        className="rounded-xl border border-neutral-700 bg-yellow-50 px-3 py-2 text-sm font-semibold text-neutral-950 outline-none focus:border-yellow-400"
       >
-        {options.map((item) => (
-          <option key={item}>{item}</option>
+        {options.map((option) => (
+          <option key={option}>{option}</option>
         ))}
       </select>
     </label>
   );
 }
 
-function Card({ title, value }: { title: string; value: string }) {
+function CheckboxField({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (value: boolean) => void;
+}) {
   return (
-    <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-4">
+    <label className="flex items-center gap-3 rounded-xl border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-200">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+        className="h-4 w-4"
+      />
+      {label}
+    </label>
+  );
+}
+
+function InfoBox({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-3 text-xs italic leading-5 text-yellow-100">
+      {children}
+    </div>
+  );
+}
+
+function ResultRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-4 border-b border-neutral-800 pb-2">
+      <span className="text-sm text-neutral-400">{label}</span>
+      <span className="text-sm font-bold text-white">{value}</span>
+    </div>
+  );
+}
+
+function ValidationCard({ title, value }: { title: string; value: string }) {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-neutral-800">
+      <div className="bg-neutral-800 px-4 py-2 text-right text-xs font-bold uppercase text-white">
+        {title}
+      </div>
+      <div className="bg-green-100 px-4 py-4 text-center text-sm font-bold uppercase text-green-800">
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function MiniMetric({ title, value }: { title: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-neutral-800 bg-neutral-950 p-4">
       <p className="text-xs text-neutral-500">{title}</p>
-      <p className="mt-1 text-lg font-medium">{value}</p>
+      <p className="mt-1 text-sm font-bold text-white">{value}</p>
     </div>
   );
 }
