@@ -36,6 +36,16 @@ export const ILUMINACIONES: Iluminacion[] = [
   "Sin iluminación",
 ];
 
+export const ALTURA_CONDICIONES = [
+  "A nivel de piso",
+  "Pared / fachada",
+  "Muro",
+  "Azotea",
+  "Altura con escalera",
+  "Altura con andamio",
+  "Sin condición especial",
+] as const;
+
 export const DEFAULT_FORM: FormState = {
   cliente: "Cliente nuevo",
   vendedor: "",

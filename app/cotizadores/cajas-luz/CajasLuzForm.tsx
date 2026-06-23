@@ -1,8 +1,9 @@
 "use client";
 
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useMemo, useState, type ReactNode } from "react";
 import type { CostRow, FormState } from "./_lib/types";
 import {
+  ALTURA_CONDICIONES,
   CARATULAS,
   DEFAULT_FORM,
   ILUMINACIONES,
@@ -56,9 +57,11 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
           <h2 className="text-lg font-bold tracking-wide text-white">
             PANTERA PUBLICIDAD | COTIZADOR MAESTRO
           </h2>
+
           <p className="mt-1 text-sm font-semibold text-yellow-400">
             CAJAS DE LUZ · CAPTURA BÁSICA PARA VENDEDORES
           </p>
+
           <p className="mt-3 rounded-xl bg-yellow-100 px-4 py-2 text-xs font-semibold italic text-neutral-900">
             Captura solo los campos necesarios. Los cálculos internos se generan
             automáticamente.
@@ -199,9 +202,10 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
                 }
               />
 
-              <TextField
+              <SelectField
                 label="Altura / condición"
                 value={form.alturaCondicion}
+                options={ALTURA_CONDICIONES}
                 onChange={(value) => updateField("alturaCondicion", value)}
               />
 
@@ -412,6 +416,7 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
                   <span className="text-sm font-bold uppercase">
                     Total con IVA
                   </span>
+
                   <span className="text-2xl font-black">
                     {money(result.costos.totalConIva)}
                   </span>
@@ -419,15 +424,21 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
               </div>
             </div>
 
-            <ValidationCard title="Estado del precio" value={result.validations.precio} />
+            <ValidationCard
+              title="Estado del precio"
+              value={result.validations.precio}
+            />
+
             <ValidationCard
               title="Validación de materiales"
               value={result.validations.material}
             />
+
             <ValidationCard
               title="Validación de servicios especiales"
               value={result.validations.servicios}
             />
+
             <ValidationCard
               title="Validación de impresión"
               value={result.validations.impresion}
@@ -438,22 +449,27 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
                 title="Área frente"
                 value={`${fixed(result.medidas.areaFrenteM2)} m²`}
               />
+
               <MiniMetric
                 title="Canto"
                 value={`${fixed(result.medidas.cantoCm)} cm`}
               />
+
               <MiniMetric
                 title="Lámina total"
                 value={`${fixed(result.lamina.areaTotalM2)} m²`}
               />
+
               <MiniMetric
                 title="Tubular"
                 value={`${result.estructura.tramosTubular} tramos`}
               />
+
               <MiniMetric
                 title="Iluminación"
                 value={`${result.iluminacion.cantidad} ${result.iluminacion.unidad}`}
               />
+
               <MiniMetric
                 title="Fuente"
                 value={result.iluminacion.fuente.label}
@@ -497,20 +513,30 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
                       key={`${line.grupo}-${line.concepto}-${index}`}
                       className="border-b border-neutral-800"
                     >
-                      <td className="px-3 py-3 text-neutral-500">{line.grupo}</td>
-                      <td className="px-3 py-3 text-white">{line.concepto}</td>
+                      <td className="px-3 py-3 text-neutral-500">
+                        {line.grupo}
+                      </td>
+
+                      <td className="px-3 py-3 text-white">
+                        {line.concepto}
+                      </td>
+
                       <td className="px-3 py-3 text-neutral-500">
                         {line.sku || "—"}
                       </td>
+
                       <td className="px-3 py-3 text-right">
                         {fixed(line.cantidad)}
                       </td>
+
                       <td className="px-3 py-3 text-neutral-400">
                         {line.unidad}
                       </td>
+
                       <td className="px-3 py-3 text-right">
                         {money(line.costoUnitario)}
                       </td>
+
                       <td className="px-3 py-3 text-right font-semibold">
                         {money(line.total)}
                       </td>
@@ -538,11 +564,14 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
               title="Precio S/IVA"
               value={money(result.costos.precioSinIva)}
             />
+
             <MiniMetric title="IVA" value={money(result.costos.iva)} />
+
             <MiniMetric
               title="Total C/IVA"
               value={money(result.costos.totalConIva)}
             />
+
             <MiniMetric
               title="Utilidad"
               value={money(result.costos.utilidad)}
@@ -568,7 +597,11 @@ function CaratulaInfo({ caratula }: { caratula: string }) {
     Otro: "Usa costo manual de carátula por m².",
   };
 
-  return <InfoBox>{descriptions[caratula] || "Configuración no definida."}</InfoBox>;
+  return (
+    <InfoBox>
+      {descriptions[caratula] || "Configuración no definida."}
+    </InfoBox>
+  );
 }
 
 function SectionHeader({
@@ -585,6 +618,7 @@ function SectionHeader({
           {number}
         </span>
       )}
+
       <h3 className="text-sm font-bold uppercase tracking-wide text-white">
         {title}
       </h3>
@@ -597,7 +631,7 @@ function FieldGroup({
   children,
 }: {
   title: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <div className="rounded-2xl border border-neutral-800 bg-neutral-950 p-4">
@@ -622,6 +656,7 @@ function TextField({
   return (
     <label className="grid gap-1 text-sm">
       <span className="text-neutral-400">{label}</span>
+
       <input
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -710,12 +745,13 @@ function CheckboxField({
         onChange={(event) => onChange(event.target.checked)}
         className="h-4 w-4"
       />
+
       {label}
     </label>
   );
 }
 
-function InfoBox({ children }: { children: React.ReactNode }) {
+function InfoBox({ children }: { children: ReactNode }) {
   return (
     <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-3 text-xs italic leading-5 text-yellow-100">
       {children}
@@ -738,6 +774,7 @@ function ValidationCard({ title, value }: { title: string; value: string }) {
       <div className="bg-neutral-800 px-4 py-2 text-right text-xs font-bold uppercase text-white">
         {title}
       </div>
+
       <div className="bg-green-100 px-4 py-4 text-center text-sm font-bold uppercase text-green-800">
         {value}
       </div>
