@@ -73,6 +73,8 @@ function addLine({
   unidad: string;
   costoUnitario: number;
 }) {
+  if (cantidad <= 0) return;
+
   lines.push({
     grupo,
     concepto,
@@ -311,7 +313,9 @@ function addHerrajesConsumiblesLines({
     form.iluminacion === "Micro LEDs";
 
   if (usaModulos && iluminacionCantidad > 0) {
-    const tubosGunther = Math.ceil(iluminacionCantidad / TIRAS_POR_TUBO_GUNTHER);
+    const tubosGunther = Math.ceil(
+      iluminacionCantidad / TIRAS_POR_TUBO_GUNTHER
+    );
 
     addLine({
       lines,
@@ -416,6 +420,170 @@ function addHerrajesConsumiblesLines({
     unidad: "LITRO",
     costoUnitario: cost(costMap, "PINTURA_ESMALTE"),
   });
+}
+
+function getTuboAlmaRule(areaBaseM2: number) {
+  if (areaBaseM2 <= 3) {
+    return {
+      sku: "TUBO_ALMA_2",
+      label: 'Tubo alma 2"',
+    };
+  }
+
+  if (areaBaseM2 <= 7) {
+    return {
+      sku: "TUBO_ALMA_3",
+      label: 'Tubo alma 3"',
+    };
+  }
+
+  return {
+    sku: "TUBO_ALMA_4",
+    label: 'Tubo alma 4"',
+  };
+}
+
+function addSoportesInstalacionLines({
+  lines,
+  form,
+  costMap,
+  anchoM,
+  altoM,
+  cantidad,
+  areaBaseM2,
+  perimetroMl,
+}: {
+  lines: MaterialLine[];
+  form: FormState;
+  costMap: Map<string, number>;
+  anchoM: number;
+  altoM: number;
+  cantidad: number;
+  areaBaseM2: number;
+  perimetroMl: number;
+}) {
+  if (form.incluyeInstalacion !== "SI") return;
+
+  const condicion = form.alturaCondicion.toLowerCase();
+
+  const esAzotea = condicion.includes("azotea");
+  const esPared =
+    condicion.includes("pared") ||
+    condicion.includes("muro") ||
+    condicion.includes("fachada");
+
+  const esEspecial =
+    form.tipoCaja === "Bandera" ||
+    form.tipoCaja === "Paleta" ||
+    form.tipoCaja === "Doble vista";
+
+  if (esAzotea || esPared || esEspecial) {
+    const anguloSku = esAzotea ? "ANGULO_ACERO_1" : "ANGULO_ACERO_1_1_2";
+    const anguloLabel = esAzotea
+      ? 'Ángulo de acero 1"'
+      : 'Ángulo de acero 1 1/2"';
+
+    const anguloMl = Math.ceil(Math.max(perimetroMl * 0.5, cantidad * 2));
+    const puntosFijacion = Math.max(4 * cantidad, Math.ceil(anguloMl / 0.5));
+
+    addLine({
+      lines,
+      grupo: "Soportes instalación",
+      concepto: anguloLabel,
+      sku: anguloSku,
+      cantidad: anguloMl,
+      unidad: "ML",
+      costoUnitario: cost(costMap, anguloSku),
+    });
+
+    addLine({
+      lines,
+      grupo: "Soportes instalación",
+      concepto: "Taquete TX 3/8 x 3",
+      sku: "TAQUETE_TX_3_8",
+      cantidad: puntosFijacion,
+      unidad: "PIEZA",
+      costoUnitario: cost(costMap, "TAQUETE_TX_3_8"),
+    });
+
+    addLine({
+      lines,
+      grupo: "Soportes instalación",
+      concepto: 'Pija taladrante 2"',
+      sku: "PIJA_TALADRANTE_2",
+      cantidad: puntosFijacion,
+      unidad: "PIEZA",
+      costoUnitario: cost(costMap, "PIJA_TALADRANTE_2"),
+    });
+  }
+
+  if (form.tipoCaja === "Bandera" || form.tipoCaja === "Paleta") {
+    const tuboAlma = getTuboAlmaRule(areaBaseM2);
+
+    const tuboAlmaMl = Math.ceil(Math.max(anchoM, altoM) * cantidad);
+    const placas = form.tipoCaja === "Paleta" ? 2 * cantidad : cantidad;
+    const tornilleriaPlaca = 4 * cantidad;
+
+    addLine({
+      lines,
+      grupo: "Tubo alma",
+      concepto: tuboAlma.label,
+      sku: tuboAlma.sku,
+      cantidad: tuboAlmaMl,
+      unidad: "ML",
+      costoUnitario: cost(costMap, tuboAlma.sku),
+    });
+
+    addLine({
+      lines,
+      grupo: "Tubo alma",
+      concepto: "Placa de acero para tubo alma",
+      sku: "PLACA_ACERO_TUBO_ALMA",
+      cantidad: placas,
+      unidad: "PIEZA",
+      costoUnitario: cost(costMap, "PLACA_ACERO_TUBO_ALMA"),
+    });
+
+    addLine({
+      lines,
+      grupo: "Tubo alma",
+      concepto: "Tornillo 1/2 grado 5",
+      sku: "TORNILLO_GRADO5_1_2",
+      cantidad: tornilleriaPlaca,
+      unidad: "PIEZA",
+      costoUnitario: cost(costMap, "TORNILLO_GRADO5_1_2"),
+    });
+
+    addLine({
+      lines,
+      grupo: "Tubo alma",
+      concepto: "Tuerca 1/2",
+      sku: "TUERCA_1_2",
+      cantidad: tornilleriaPlaca,
+      unidad: "PIEZA",
+      costoUnitario: cost(costMap, "TUERCA_1_2"),
+    });
+
+    addLine({
+      lines,
+      grupo: "Tubo alma",
+      concepto: "Rondana 1/2",
+      sku: "RONDANA_1_2",
+      cantidad: tornilleriaPlaca,
+      unidad: "PIEZA",
+      costoUnitario: cost(costMap, "RONDANA_1_2"),
+    });
+
+    addLine({
+      lines,
+      grupo: "Tubo alma",
+      concepto: "Rondana de presión 1/2",
+      sku: "RONDANA_PRESION_1_2",
+      cantidad: tornilleriaPlaca,
+      unidad: "PIEZA",
+      costoUnitario: cost(costMap, "RONDANA_PRESION_1_2"),
+    });
+  }
 }
 
 function getPrecioState(margen: number) {
@@ -709,6 +877,17 @@ export function calculateCajaLuz(
     iluminacionUnidad,
   });
 
+  addSoportesInstalacionLines({
+    lines,
+    form,
+    costMap,
+    anchoM,
+    altoM,
+    cantidad,
+    areaBaseM2,
+    perimetroMl,
+  });
+
   addLine({
     lines,
     grupo: "Mano de obra",
@@ -836,9 +1015,8 @@ export function calculateCajaLuz(
       areaTotalM2: areaTotalLaminaM2,
     },
     estructura: {
-      tubularLabel: getTubularRule({ tipoCaja: form.tipoCaja, areaBaseM2 })
-        .label,
-      tubularSku: getTubularRule({ tipoCaja: form.tipoCaja, areaBaseM2 }).sku,
+      tubularLabel: tubular.label,
+      tubularSku: tubular.sku,
       tubularMl,
       tramosTubular,
       refuerzosMl,
