@@ -15,6 +15,20 @@ import {
 } from "./rules";
 import { toNumber } from "./format";
 
+const BASES_POR_LAMPARA = 2;
+const TORNILLOS_POR_BASE = 1;
+const TUERCAS_POR_BASE = 1;
+
+const TIRAS_POR_TUBO_GUNTHER = 2;
+
+const SEPARACION_PIJA_RECTA_M = 0.15;
+const SEPARACION_PIJA_SUAJADA_M = 0.1;
+
+const RENDIMIENTO_LIJA_M2 = 4;
+const RENDIMIENTO_THINNER_M2_POR_LITRO = 10;
+const RENDIMIENTO_PRIMER_M2_POR_LITRO = 8;
+const RENDIMIENTO_PINTURA_M2_POR_LITRO = 8;
+
 function cost(costMap: Map<string, number>, sku: string) {
   return costMap.get(sku) ?? 0;
 }
@@ -221,6 +235,189 @@ function addCaratulaLines({
   });
 }
 
+function addHerrajesConsumiblesLines({
+  lines,
+  form,
+  costMap,
+  perimetroMl,
+  areaTotalLaminaM2,
+  iluminacionCantidad,
+  iluminacionUnidad,
+}: {
+  lines: MaterialLine[];
+  form: FormState;
+  costMap: Map<string, number>;
+  perimetroMl: number;
+  areaTotalLaminaM2: number;
+  iluminacionCantidad: number;
+  iluminacionUnidad: string;
+}) {
+  const separacionPija =
+    form.tipoCaja === "Suajada"
+      ? SEPARACION_PIJA_SUAJADA_M
+      : SEPARACION_PIJA_RECTA_M;
+
+  const pijasCanto = Math.ceil(perimetroMl / separacionPija);
+
+  addLine({
+    lines,
+    grupo: "Herrajes",
+    concepto: "Pija Tek 1/2 para canto",
+    sku: "PIJA_TEK_1_2",
+    cantidad: pijasCanto,
+    unidad: "PIEZA",
+    costoUnitario: cost(costMap, "PIJA_TEK_1_2"),
+  });
+
+  if (form.iluminacion === "Lámparas LED" && iluminacionCantidad > 0) {
+    const bases = iluminacionCantidad * BASES_POR_LAMPARA;
+    const tornillos = bases * TORNILLOS_POR_BASE;
+    const tuercas = bases * TUERCAS_POR_BASE;
+
+    addLine({
+      lines,
+      grupo: "Herrajes",
+      concepto: "Base para lámpara LED T8",
+      sku: "BASE_LAMPARA_T8",
+      cantidad: bases,
+      unidad: "PIEZA",
+      costoUnitario: cost(costMap, "BASE_LAMPARA_T8"),
+    });
+
+    addLine({
+      lines,
+      grupo: "Herrajes",
+      concepto: "Tornillo 5/32 x 1",
+      sku: "TORNILLO_5_32_X1",
+      cantidad: tornillos,
+      unidad: "PIEZA",
+      costoUnitario: cost(costMap, "TORNILLO_5_32_X1"),
+    });
+
+    addLine({
+      lines,
+      grupo: "Herrajes",
+      concepto: "Tuerca 5/32",
+      sku: "TUERCA_5_32",
+      cantidad: tuercas,
+      unidad: "PIEZA",
+      costoUnitario: cost(costMap, "TUERCA_5_32"),
+    });
+  }
+
+  const usaModulos =
+    form.iluminacion === "Módulos LED normales" ||
+    form.iluminacion === "Módulos LED ultra brillantes" ||
+    form.iluminacion === "Micro LEDs";
+
+  if (usaModulos && iluminacionCantidad > 0) {
+    const tubosGunther = Math.ceil(iluminacionCantidad / TIRAS_POR_TUBO_GUNTHER);
+
+    addLine({
+      lines,
+      grupo: "Consumibles",
+      concepto: "Pegamento Gunther",
+      sku: "GUNTHER",
+      cantidad: tubosGunther,
+      unidad: "TUBO",
+      costoUnitario: cost(costMap, "GUNTHER"),
+    });
+  }
+
+  if (form.iluminacion !== "Sin iluminación") {
+    const cable14Ml = Math.ceil(perimetroMl + 2);
+    const cable18Ml =
+      iluminacionUnidad === "PIEZA"
+        ? Math.ceil(iluminacionCantidad * 0.5)
+        : Math.ceil(iluminacionCantidad * 0.3);
+
+    addLine({
+      lines,
+      grupo: "Eléctrico",
+      concepto: "Cable 14 dúplex",
+      sku: "CABLE_14_DUPLEX",
+      cantidad: cable14Ml,
+      unidad: "ML",
+      costoUnitario: cost(costMap, "CABLE_14_DUPLEX"),
+    });
+
+    addLine({
+      lines,
+      grupo: "Eléctrico",
+      concepto: "Cable calibre 18",
+      sku: "CABLE_18",
+      cantidad: cable18Ml,
+      unidad: "ML",
+      costoUnitario: cost(costMap, "CABLE_18"),
+    });
+  }
+
+  const lijas = Math.max(1, Math.ceil(areaTotalLaminaM2 / RENDIMIENTO_LIJA_M2));
+  const thinnerLitros = Math.max(
+    1,
+    Math.ceil(areaTotalLaminaM2 / RENDIMIENTO_THINNER_M2_POR_LITRO)
+  );
+  const estopaKg = Math.max(0.25, thinnerLitros * 0.25);
+  const primerLitros = Math.max(
+    1,
+    Math.ceil(areaTotalLaminaM2 / RENDIMIENTO_PRIMER_M2_POR_LITRO)
+  );
+  const pinturaLitros = Math.max(
+    1,
+    Math.ceil(areaTotalLaminaM2 / RENDIMIENTO_PINTURA_M2_POR_LITRO)
+  );
+
+  addLine({
+    lines,
+    grupo: "Acabado",
+    concepto: "Lija 100/120",
+    sku: "LIJA_100_120",
+    cantidad: lijas,
+    unidad: "PIEZA",
+    costoUnitario: cost(costMap, "LIJA_100_120"),
+  });
+
+  addLine({
+    lines,
+    grupo: "Acabado",
+    concepto: "Thinner",
+    sku: "THINNER",
+    cantidad: thinnerLitros,
+    unidad: "LITRO",
+    costoUnitario: cost(costMap, "THINNER"),
+  });
+
+  addLine({
+    lines,
+    grupo: "Acabado",
+    concepto: "Estopa",
+    sku: "ESTOPA",
+    cantidad: estopaKg,
+    unidad: "KG",
+    costoUnitario: cost(costMap, "ESTOPA"),
+  });
+
+  addLine({
+    lines,
+    grupo: "Acabado",
+    concepto: "Primer anticorrosivo",
+    sku: "PRIMER_ANTICORROSIVO",
+    cantidad: primerLitros,
+    unidad: "LITRO",
+    costoUnitario: cost(costMap, "PRIMER_ANTICORROSIVO"),
+  });
+
+  addLine({
+    lines,
+    grupo: "Acabado",
+    concepto: "Pintura esmalte",
+    sku: "PINTURA_ESMALTE",
+    cantidad: pinturaLitros,
+    unidad: "LITRO",
+    costoUnitario: cost(costMap, "PINTURA_ESMALTE"),
+  });
+}
+
 function getPrecioState(margen: number) {
   if (margen >= 35) return "MARGEN SALUDABLE PARA NEGOCIAR";
   if (margen >= 25) return "MARGEN ACEPTABLE, REVISAR DESCUENTOS";
@@ -377,7 +574,8 @@ export function calculateCajaLuz(
     const lineasVerticales = Math.max(Math.ceil(altoM / lamp.largoM), 1);
 
     iluminacionLabel = lamp.label;
-    iluminacionCantidad = lamparasPorLinea * lineasVerticales * cantidad * vistas;
+    iluminacionCantidad =
+      lamparasPorLinea * lineasVerticales * cantidad * vistas;
     iluminacionUnidad = "PIEZA";
     consumoW = iluminacionCantidad * toNumber(form.wattsPorLampara);
     usaFuente = false;
@@ -500,6 +698,16 @@ export function calculateCajaLuz(
       });
     }
   }
+
+  addHerrajesConsumiblesLines({
+    lines,
+    form,
+    costMap,
+    perimetroMl,
+    areaTotalLaminaM2,
+    iluminacionCantidad,
+    iluminacionUnidad,
+  });
 
   addLine({
     lines,
@@ -628,8 +836,9 @@ export function calculateCajaLuz(
       areaTotalM2: areaTotalLaminaM2,
     },
     estructura: {
-      tubularLabel: tubular.label,
-      tubularSku: tubular.sku,
+      tubularLabel: getTubularRule({ tipoCaja: form.tipoCaja, areaBaseM2 })
+        .label,
+      tubularSku: getTubularRule({ tipoCaja: form.tipoCaja, areaBaseM2 }).sku,
       tubularMl,
       tramosTubular,
       refuerzosMl,
