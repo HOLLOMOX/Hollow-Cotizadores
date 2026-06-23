@@ -330,6 +330,7 @@ function addHerrajesConsumiblesLines({
 
   if (form.iluminacion !== "Sin iluminación") {
     const cable14Ml = Math.ceil(perimetroMl + 2);
+
     const cable18Ml =
       iluminacionUnidad === "PIEZA"
         ? Math.ceil(iluminacionCantidad * 0.5)
@@ -357,15 +358,19 @@ function addHerrajesConsumiblesLines({
   }
 
   const lijas = Math.max(1, Math.ceil(areaTotalLaminaM2 / RENDIMIENTO_LIJA_M2));
+
   const thinnerLitros = Math.max(
     1,
     Math.ceil(areaTotalLaminaM2 / RENDIMIENTO_THINNER_M2_POR_LITRO)
   );
+
   const estopaKg = Math.max(0.25, thinnerLitros * 0.25);
+
   const primerLitros = Math.max(
     1,
     Math.ceil(areaTotalLaminaM2 / RENDIMIENTO_PRIMER_M2_POR_LITRO)
   );
+
   const pinturaLitros = Math.max(
     1,
     Math.ceil(areaTotalLaminaM2 / RENDIMIENTO_PINTURA_M2_POR_LITRO)
@@ -426,20 +431,20 @@ function getTuboAlmaRule(areaBaseM2: number) {
   if (areaBaseM2 <= 3) {
     return {
       sku: "TUBO_ALMA_2",
-      label: 'Tubo alma 2"',
+      label: 'Tubo cédula alma 2"',
     };
   }
 
   if (areaBaseM2 <= 7) {
     return {
       sku: "TUBO_ALMA_3",
-      label: 'Tubo alma 3"',
+      label: 'Tubo cédula alma 3"',
     };
   }
 
   return {
     sku: "TUBO_ALMA_4",
-    label: 'Tubo alma 4"',
+    label: 'Tubo cédula alma 4"',
   };
 }
 
@@ -447,8 +452,6 @@ function addSoportesInstalacionLines({
   lines,
   form,
   costMap,
-  anchoM,
-  altoM,
   cantidad,
   areaBaseM2,
   perimetroMl,
@@ -456,8 +459,6 @@ function addSoportesInstalacionLines({
   lines: MaterialLine[];
   form: FormState;
   costMap: Map<string, number>;
-  anchoM: number;
-  altoM: number;
   cantidad: number;
   areaBaseM2: number;
   perimetroMl: number;
@@ -467,6 +468,7 @@ function addSoportesInstalacionLines({
   const condicion = form.alturaCondicion.toLowerCase();
 
   const esAzotea = condicion.includes("azotea");
+
   const esPared =
     condicion.includes("pared") ||
     condicion.includes("muro") ||
@@ -479,6 +481,7 @@ function addSoportesInstalacionLines({
 
   if (esAzotea || esPared || esEspecial) {
     const anguloSku = esAzotea ? "ANGULO_ACERO_1" : "ANGULO_ACERO_1_1_2";
+
     const anguloLabel = esAzotea
       ? 'Ángulo de acero 1"'
       : 'Ángulo de acero 1 1/2"';
@@ -520,7 +523,7 @@ function addSoportesInstalacionLines({
   if (form.tipoCaja === "Bandera" || form.tipoCaja === "Paleta") {
     const tuboAlma = getTuboAlmaRule(areaBaseM2);
 
-    const tuboAlmaMl = Math.ceil(Math.max(anchoM, altoM) * cantidad);
+    const piezasTuboAlma = cantidad;
     const placas = form.tipoCaja === "Paleta" ? 2 * cantidad : cantidad;
     const tornilleriaPlaca = 4 * cantidad;
 
@@ -529,8 +532,8 @@ function addSoportesInstalacionLines({
       grupo: "Tubo alma",
       concepto: tuboAlma.label,
       sku: tuboAlma.sku,
-      cantidad: tuboAlmaMl,
-      unidad: "ML",
+      cantidad: piezasTuboAlma,
+      unidad: "PIEZA",
       costoUnitario: cost(costMap, tuboAlma.sku),
     });
 
@@ -765,8 +768,8 @@ export function calculateCajaLuz(
       areaFrenteM2 * toNumber(form.tirasPorM2Normal)
     );
     iluminacionUnidad = "TIRA C/20";
-    wattsPorModulo = WATTS_MODULO_NORMAL;
     modulosTotales = iluminacionCantidad * MODULOS_POR_TIRA;
+    wattsPorModulo = WATTS_MODULO_NORMAL;
     consumoW = modulosTotales * wattsPorModulo;
     usaFuente = true;
 
@@ -787,8 +790,8 @@ export function calculateCajaLuz(
       areaFrenteM2 * toNumber(form.tirasPorM2Ultra)
     );
     iluminacionUnidad = "TIRA C/20";
-    wattsPorModulo = WATTS_MODULO_ULTRA;
     modulosTotales = iluminacionCantidad * MODULOS_POR_TIRA;
+    wattsPorModulo = WATTS_MODULO_ULTRA;
     consumoW = modulosTotales * wattsPorModulo;
     usaFuente = true;
 
@@ -809,8 +812,8 @@ export function calculateCajaLuz(
       areaFrenteM2 * toNumber(form.tirasPorM2Micro)
     );
     iluminacionUnidad = "TIRA C/20";
-    wattsPorModulo = WATTS_MODULO_MICRO;
     modulosTotales = iluminacionCantidad * MODULOS_POR_TIRA;
+    wattsPorModulo = WATTS_MODULO_MICRO;
     consumoW = modulosTotales * wattsPorModulo;
     usaFuente = true;
 
@@ -881,8 +884,6 @@ export function calculateCajaLuz(
     lines,
     form,
     costMap,
-    anchoM,
-    altoM,
     cantidad,
     areaBaseM2,
     perimetroMl,
@@ -938,6 +939,7 @@ export function calculateCajaLuz(
   const costoDirecto = lines.reduce((sum, line) => sum + line.total, 0);
 
   const margenPorcentaje = toNumber(form.margen);
+
   const precioSinIva =
     margenPorcentaje >= 100
       ? costoDirecto
