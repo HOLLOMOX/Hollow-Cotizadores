@@ -1,7 +1,10 @@
 import Link from "next/link";
+import { Fragment } from "react";
 import { notFound, redirect } from "next/navigation";
 import AccessDenied from "@/components/AccessDenied";
 import { getCurrentUserProfile } from "@/utils/auth/permissions";
+import StatusActions from "./StatusActions";
+import { updateQuoteStatus, type QuoteStatus } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +42,20 @@ type QuoteDetail = {
   updated_at: string | null;
 };
 
+function normalizeStatus(status: string | null): QuoteStatus {
+  if (
+    status === "BORRADOR" ||
+    status === "ENVIADA" ||
+    status === "APROBADA" ||
+    status === "RECHAZADA" ||
+    status === "CANCELADA"
+  ) {
+    return status;
+  }
+
+  return "BORRADOR";
+}
+
 export default async function CotizacionDetallePage({
   params,
 }: {
@@ -64,7 +81,7 @@ export default async function CotizacionDetallePage({
 
   const isAdmin = profile.role === "admin";
 
-  let query = supabase
+  const { data, error } = await supabase
     .from("quotes")
     .select(
       `
@@ -94,8 +111,6 @@ export default async function CotizacionDetallePage({
     .eq("id", id)
     .single();
 
-  const { data, error } = await query;
-
   if (error || !data) {
     notFound();
   }
@@ -105,6 +120,12 @@ export default async function CotizacionDetallePage({
   if (!isAdmin && quote.user_id !== user.id) {
     return <AccessDenied profile={profile} section="Detalle de cotización" />;
   }
+
+  const currentStatus = normalizeStatus(quote.status);
+  const canChangeStatus =
+    profile.role === "admin" ||
+    profile.role === "vendedor" ||
+    quote.user_id === user.id;
 
   const resultData = quote.result_data ?? {};
   const formData = quote.form_data ?? {};
@@ -152,7 +173,7 @@ export default async function CotizacionDetallePage({
                   {quote.quote_number ?? "Cotización"}
                 </h1>
 
-                <StatusBadge status={quote.status ?? "BORRADOR"} />
+                <StatusBadge status={currentStatus} />
               </div>
 
               <p className="mt-2 text-sm text-neutral-400">
@@ -161,6 +182,7 @@ export default async function CotizacionDetallePage({
 
               <p className="mt-1 text-xs text-neutral-500">
                 Creada: {formatDate(quote.created_at)}
+                {quote.updated_at ? ` · Actualizada: ${formatDate(quote.updated_at)}` : ""}
               </p>
             </div>
 
@@ -171,6 +193,13 @@ export default async function CotizacionDetallePage({
             </div>
           </div>
         </header>
+
+        <StatusActions
+          quoteId={quote.id}
+          currentStatus={currentStatus}
+          canChange={canChangeStatus}
+          updateAction={updateQuoteStatus}
+        />
 
         <section className="grid gap-4 md:grid-cols-4">
           <MetricCard
@@ -299,7 +328,7 @@ export default async function CotizacionDetallePage({
 
               <tbody>
                 {groupedEntries.map(([group, lines]) => (
-                  <FragmentLike keyName={group} key={group}>
+                  <Fragment key={group}>
                     <tr className="bg-neutral-800/60">
                       <td
                         colSpan={7}
@@ -343,7 +372,7 @@ export default async function CotizacionDetallePage({
                         </td>
                       </tr>
                     ))}
-                  </FragmentLike>
+                  </Fragment>
                 ))}
 
                 {materialLines.length === 0 && (
@@ -378,15 +407,6 @@ export default async function CotizacionDetallePage({
       </div>
     </main>
   );
-}
-
-function FragmentLike({
-  children,
-}: {
-  keyName: string;
-  children: React.ReactNode;
-}) {
-  return <>{children}</>;
 }
 
 function NavButton({ href, label }: { href: string; label: string }) {
