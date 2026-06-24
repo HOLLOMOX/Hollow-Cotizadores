@@ -60,11 +60,11 @@ export async function requireAdmin() {
   const result = await requireLogin();
 
   if (!result.profile || result.profile.active === false) {
-    redirect("/login?error=Usuario inactivo o sin perfil");
+    redirect("/no-autorizado?reason=inactive");
   }
 
   if (result.profile.role !== "admin") {
-    redirect("/?error=No tienes permiso para entrar a esa sección");
+    redirect("/no-autorizado?reason=admin");
   }
 
   return result;
