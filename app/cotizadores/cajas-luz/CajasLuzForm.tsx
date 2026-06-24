@@ -262,7 +262,9 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
               <CheckboxField
                 label="Tiempos automáticos"
                 checked={form.usarTiemposAutomaticos}
-                onChange={(value) => updateField("usarTiemposAutomaticos", value)}
+                onChange={(value) =>
+                  updateField("usarTiemposAutomaticos", value)
+                }
               />
 
               <NumberField
@@ -628,7 +630,7 @@ function CaratulaInfo({ caratula }: { caratula: string }) {
     "Lona backlight impresa":
       "Usa LONA_BACKLIGHT + IMPRESION_LONA_HP.",
     "Lona backlight rotulada":
-      "Usa LONA_BACKLIGHT + VINIL_CORTE_TRANSLUCIDO + ROTULADO_VINIL.",
+      "Usa LONA_BACKLIGHT por m² + VINIL_CORTE_COLOR_ML estándar hasta 4 colores, 1 ML por color + ROTULADO_VINIL.",
     "Acrílico rotulado":
       "Usa ACRILICO_BLANCO_LECHOSO + VINIL_CORTE_TRANSLUCIDO + ROTULADO_VINIL.",
     "Acrílico impreso":

@@ -19,6 +19,9 @@ const BASES_POR_LAMPARA = 2;
 const TORNILLOS_POR_BASE = 1;
 const TUERCAS_POR_BASE = 1;
 
+const MAX_COLORES_VINIL_ROTULADO = 4;
+const ML_VINIL_POR_COLOR_ROTULADO = 1;
+
 const TIRAS_POR_TUBO_GUNTHER = 2;
 
 const SEPARACION_PIJA_RECTA_M = 0.15;
@@ -122,6 +125,9 @@ function addCaratulaLines({
   }
 
   if (form.caratula === "Lona backlight rotulada") {
+    const mlVinilTotal =
+      MAX_COLORES_VINIL_ROTULADO * ML_VINIL_POR_COLOR_ROTULADO;
+
     addLine({
       lines,
       grupo: "Carátula",
@@ -135,11 +141,11 @@ function addCaratulaLines({
     addLine({
       lines,
       grupo: "Carátula",
-      concepto: "Vinil de corte translúcido",
-      sku: "VINIL_CORTE_TRANSLUCIDO",
-      cantidad: areaFrenteM2,
-      unidad: "m²",
-      costoUnitario: cost(costMap, "VINIL_CORTE_TRANSLUCIDO"),
+      concepto: "Vinil de corte estándar hasta 4 colores",
+      sku: "VINIL_CORTE_COLOR_ML",
+      cantidad: mlVinilTotal,
+      unidad: "ML",
+      costoUnitario: cost(costMap, "VINIL_CORTE_COLOR_ML"),
     });
 
     addLine({
