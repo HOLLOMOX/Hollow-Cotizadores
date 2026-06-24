@@ -93,6 +93,10 @@ export default function CajasLuzForm({
     return groups;
   }, {});
 
+  const groupedEntries = Object.entries(groupedPartidas) as Array<
+    [string, typeof result.partidas]
+  >;
+
   return (
     <div className="mt-8 space-y-6">
       <div className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4">
@@ -585,7 +589,7 @@ export default function CajasLuzForm({
             </thead>
 
             <tbody>
-              {Object.entries(groupedPartidas).map(([group, lines]) => (
+              {groupedEntries.map(([group, lines]) => (
                 <Fragment key={group}>
                   <tr className="bg-neutral-800/60">
                     <td
@@ -726,13 +730,6 @@ function CaratulaInfo({ caratula }: { caratula: string }) {
     Policarbonato: "Usa POLICARBONATO.",
     Otro: "Usa costo manual de carátula por m².",
   };
-
-  return (
-    <InfoBox>
-      {descriptions[caratula] || "Configuración no definida."}
-    </InfoBox>
-  );
-}
 
   return (
     <InfoBox>
