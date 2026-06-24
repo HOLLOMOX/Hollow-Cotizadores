@@ -3,7 +3,7 @@ import { createClient } from "@/utils/supabase/server";
 import type { CostRow } from "./_lib/types";
 import CajasLuzForm from "./CajasLuzForm";
 import GuestUsageGate from "./GuestUsageGate";
-import { consumeGuestCotizadorUse } from "./actions";
+import { consumeGuestCotizadorUse, saveCajaLuzQuote } from "./actions";
 
 type AccessRow = {
   role: string;
@@ -88,6 +88,7 @@ export default async function CajasLuzPage() {
             initialUsed={access.cotizador_used}
             initialRemaining={access.cotizador_remaining}
             consumeAction={consumeGuestCotizadorUse}
+            saveAction={saveCajaLuzQuote}
           />
         </div>
       </main>
@@ -101,13 +102,17 @@ export default async function CajasLuzPage() {
           <p className="text-xs font-bold uppercase tracking-[0.25em] text-yellow-400">
             Hollow Cotizadores
           </p>
-          <h1 className="mt-2 text-2xl font-black">Cotizador de cajas de luz</h1>
+
+          <h1 className="mt-2 text-2xl font-black">
+            Cotizador de cajas de luz
+          </h1>
+
           <p className="mt-1 text-sm text-neutral-400">
             Usuario: {user.email} · Rol: {access.role}
           </p>
         </div>
 
-        <CajasLuzForm costRows={rows} />
+        <CajasLuzForm costRows={rows} saveAction={saveCajaLuzQuote} />
       </div>
     </main>
   );

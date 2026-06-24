@@ -3,7 +3,11 @@
 import { useState, useTransition } from "react";
 import type { CostRow } from "./_lib/types";
 import CajasLuzForm from "./CajasLuzForm";
-import type { ConsumeCotizadorResponse } from "./actions";
+import type {
+  ConsumeCotizadorResponse,
+  SaveQuotePayload,
+  SaveQuoteResponse,
+} from "./actions";
 
 export default function GuestUsageGate({
   costRows,
@@ -11,12 +15,14 @@ export default function GuestUsageGate({
   initialUsed,
   initialRemaining,
   consumeAction,
+  saveAction,
 }: {
   costRows: CostRow[];
   initialLimit: number | null;
   initialUsed: number;
   initialRemaining: number | null;
   consumeAction: () => Promise<ConsumeCotizadorResponse>;
+  saveAction: (payload: SaveQuotePayload) => Promise<SaveQuoteResponse>;
 }) {
   const [activated, setActivated] = useState(false);
   const [used, setUsed] = useState(initialUsed);
@@ -68,7 +74,7 @@ export default function GuestUsageGate({
           </p>
         </div>
 
-        <CajasLuzForm costRows={costRows} />
+        <CajasLuzForm costRows={costRows} saveAction={saveAction} />
       </div>
     );
   }
@@ -140,6 +146,7 @@ function MetricCard({ title, value }: { title: string; value: string }) {
       <p className="text-xs uppercase tracking-wide text-neutral-500">
         {title}
       </p>
+
       <p className="mt-2 text-3xl font-black text-white">{value}</p>
     </div>
   );
