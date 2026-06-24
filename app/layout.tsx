@@ -5,6 +5,11 @@ import AppTopBar from "@/components/AppTopBar";
 export const metadata: Metadata = {
   title: "Hollow Cotizadores",
   description: "Sistema de cotización Hollow Mox",
+  icons: {
+    icon: "/void-warlock.svg",
+    shortcut: "/void-warlock.svg",
+    apple: "/void-warlock.svg",
+  },
 };
 
 export default function RootLayout({
