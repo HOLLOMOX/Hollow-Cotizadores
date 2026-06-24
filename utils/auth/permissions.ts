@@ -94,19 +94,31 @@ export async function requireLogin() {
   return result;
 }
 
+export async function getAdminAccess() {
+  const result = await requireLogin();
+
+  const allowed =
+    result.profile?.active === true && result.profile.role === "admin";
+
+  return {
+    ...result,
+    allowed,
+  };
+}
+
 export async function requireAdmin() {
   const result = await requireLogin();
 
   if (!result.profile) {
-    redirect("/no-autorizado?reason=no-profile");
+    redirect("/");
   }
 
   if (result.profile.active === false) {
-    redirect("/no-autorizado?reason=inactive");
+    redirect("/");
   }
 
   if (result.profile.role !== "admin") {
-    redirect("/no-autorizado?reason=admin");
+    redirect("/");
   }
 
   return result;

@@ -1,81 +1,133 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
+import { revalidatePath } from "next/cache";
+import { requireAdmin } from "@/utils/auth/permissions";
 
-export async function updateCostItem(formData: FormData) {
-  const supabase = await createClient();
+const CATALOG_ROUTE = "/catalogo-costos";
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+function textValue(formData: FormData, key: string) {
+  return String(formData.get(key) ?? "").trim();
+}
 
-  if (!user) {
-    redirect("/login");
+function numericValue(formData: FormData, key: string, fallback = 0) {
+  const value = textValue(formData, key);
+
+  if (!value) return fallback;
+
+  const normalized = value.replace(",", "");
+  const number = Number(normalized);
+
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function nullableNumericValue(formData: FormData, key: string) {
+  const value = textValue(formData, key);
+
+  if (!value) return null;
+
+  const normalized = value.replace(",", "");
+  const number = Number(normalized);
+
+  return Number.isFinite(number) ? number : null;
+}
+
+function boolValue(formData: FormData, key: string) {
+  return formData.get(key) === "on";
+}
+
+export async function createCostItem(formData: FormData) {
+  const { supabase } = await requireAdmin();
+
+  const sku = textValue(formData, "sku").toUpperCase();
+  const name = textValue(formData, "name");
+  const category = textValue(formData, "category") || "general";
+  const unit = textValue(formData, "unit").toUpperCase() || "PIEZA";
+  const cost = numericValue(formData, "cost");
+  const sale_price = nullableNumericValue(formData, "sale_price");
+  const notes = textValue(formData, "notes");
+  const active = boolValue(formData, "active");
+
+  if (!sku || !name) {
+    redirect(
+      `${CATALOG_ROUTE}?error=${encodeURIComponent(
+        "SKU y nombre son obligatorios"
+      )}`
+    );
   }
 
-  const id = String(formData.get("id"));
-  const cost = Number(formData.get("cost") || 0);
-  const salePriceRaw = String(formData.get("sale_price") || "");
-  const notes = String(formData.get("notes") || "");
-  const active = formData.get("active") === "on";
+  const { error } = await supabase.from("cost_catalog").upsert(
+    {
+      sku,
+      name,
+      category,
+      unit,
+      cost,
+      sale_price,
+      active,
+      notes,
+    },
+    {
+      onConflict: "sku",
+    }
+  );
 
-  const sale_price = salePriceRaw === "" ? null : Number(salePriceRaw);
+  if (error) {
+    redirect(`${CATALOG_ROUTE}?error=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath(CATALOG_ROUTE);
+  revalidatePath("/catalogo");
+
+  redirect(
+    `${CATALOG_ROUTE}?message=${encodeURIComponent(
+      "Material guardado correctamente"
+    )}`
+  );
+}
+
+export async function updateCostItem(sku: string, formData: FormData) {
+  const { supabase } = await requireAdmin();
+
+  const name = textValue(formData, "name");
+  const category = textValue(formData, "category") || "general";
+  const unit = textValue(formData, "unit").toUpperCase() || "PIEZA";
+  const cost = numericValue(formData, "cost");
+  const sale_price = nullableNumericValue(formData, "sale_price");
+  const notes = textValue(formData, "notes");
+  const active = boolValue(formData, "active");
+
+  if (!sku || !name) {
+    redirect(
+      `${CATALOG_ROUTE}?error=${encodeURIComponent(
+        "SKU y nombre son obligatorios"
+      )}`
+    );
+  }
 
   const { error } = await supabase
     .from("cost_catalog")
     .update({
+      name,
+      category,
+      unit,
       cost,
       sale_price,
-      notes,
       active,
-      updated_at: new Date().toISOString(),
+      notes,
     })
-    .eq("id", id);
+    .eq("sku", sku);
 
   if (error) {
-    throw new Error(error.message);
+    redirect(`${CATALOG_ROUTE}?error=${encodeURIComponent(error.message)}`);
   }
 
-  revalidatePath("/catalogo-costos");
-}
+  revalidatePath(CATALOG_ROUTE);
+  revalidatePath("/catalogo");
 
-export async function createCostItem(formData: FormData) {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
-
-  const sku = String(formData.get("sku") || "").trim().toUpperCase();
-  const name = String(formData.get("name") || "").trim();
-  const category = String(formData.get("category") || "").trim();
-  const unit = String(formData.get("unit") || "").trim().toUpperCase();
-  const cost = Number(formData.get("cost") || 0);
-  const notes = String(formData.get("notes") || "").trim();
-
-  if (!sku || !name || !category || !unit) {
-    throw new Error("Faltan datos obligatorios.");
-  }
-
-  const { error } = await supabase.from("cost_catalog").insert({
-    sku,
-    name,
-    category,
-    unit,
-    cost,
-    notes,
-    active: true,
-  });
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  revalidatePath("/catalogo-costos");
+  redirect(
+    `${CATALOG_ROUTE}?message=${encodeURIComponent(
+      `SKU ${sku} actualizado correctamente`
+    )}`
+  );
 }
