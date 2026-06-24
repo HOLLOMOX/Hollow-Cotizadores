@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { getCurrentUserProfile } from "@/utils/auth/permissions";
 
 export default async function HomePage() {
@@ -30,36 +31,16 @@ export default async function HomePage() {
             Hollow Cotizadores
           </p>
 
-          <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <h1 className="text-3xl font-black">
-                Panel principal
-              </h1>
+          <div className="mt-3">
+            <h1 className="text-3xl font-black">Panel principal</h1>
 
-              <p className="mt-2 text-sm text-neutral-400">
-                Sistema de cotización, historial y administración.
-              </p>
+            <p className="mt-2 text-sm text-neutral-400">
+              Sistema de cotización, historial y administración.
+            </p>
 
-              <p className="mt-1 text-xs text-neutral-500">
-                Usuario: {user?.email ?? "Sin sesión"} · Rol: {role}
-              </p>
-            </div>
-
-            <div className="flex flex-wrap gap-3">
-              {!isLogged ? (
-                <TopButton href="/login" label="Iniciar sesión" />
-              ) : (
-                <>
-                  <TopButton href="/cotizadores/cajas-luz" label="Caja de luz" />
-
-                  {canViewCotizaciones && (
-                    <TopButton href="/cotizaciones" label="Cotizaciones" />
-                  )}
-
-                  {isAdmin && <TopButton href="/admin" label="Admin" />}
-                </>
-              )}
-            </div>
+            <p className="mt-1 text-xs text-neutral-500">
+              Usuario: {user?.email ?? "Sin sesión"} · Rol: {role}
+            </p>
           </div>
         </header>
 
@@ -165,17 +146,6 @@ export default async function HomePage() {
   );
 }
 
-function TopButton({ href, label }: { href: string; label: string }) {
-  return (
-    <Link
-      href={href}
-      className="rounded-2xl border border-neutral-700 bg-neutral-950 px-4 py-2 text-sm font-bold text-neutral-200 transition hover:border-yellow-400 hover:text-yellow-300"
-    >
-      {label}
-    </Link>
-  );
-}
-
 function MenuDropdown({
   title,
   description,
@@ -185,7 +155,7 @@ function MenuDropdown({
   title: string;
   description: string;
   icon: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <details className="group rounded-3xl border border-neutral-800 bg-neutral-900 p-6 transition hover:border-yellow-400">
@@ -196,9 +166,7 @@ function MenuDropdown({
               {icon}
             </div>
 
-            <h2 className="mt-5 text-xl font-black text-white">
-              {title}
-            </h2>
+            <h2 className="mt-5 text-xl font-black text-white">{title}</h2>
 
             <p className="mt-2 text-sm leading-6 text-neutral-400">
               {description}
@@ -233,7 +201,10 @@ function DropdownLink({
       className="block rounded-2xl border border-neutral-800 bg-neutral-950 p-4 transition hover:border-yellow-400 hover:bg-neutral-800"
     >
       <p className="text-sm font-black text-white">{title}</p>
-      <p className="mt-1 text-xs leading-5 text-neutral-500">{description}</p>
+
+      <p className="mt-1 text-xs leading-5 text-neutral-500">
+        {description}
+      </p>
     </Link>
   );
 }
