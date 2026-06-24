@@ -57,6 +57,13 @@ function createQuoteNumber() {
   return `CL-${datePart}-${timePart}`;
 }
 
+function createQuoteTitle(form: FormState) {
+  const cliente = form.cliente?.trim() || "Cliente nuevo";
+  const proyecto = form.proyecto?.trim() || "Caja de luz";
+
+  return `${proyecto} - ${cliente}`;
+}
+
 export async function consumeGuestCotizadorUse(): Promise<ConsumeCotizadorResponse> {
   const supabase = await createClient();
 
@@ -150,9 +157,13 @@ export async function saveCajaLuzQuote(
   }
 
   const quoteNumber = createQuoteNumber();
+  const quoteTitle = createQuoteTitle(form);
 
   const insertPayload = {
     user_id: user.id,
+
+    title: quoteTitle,
+
     quote_type: "CAJA_LUZ",
 
     client_name: form.cliente || "Cliente nuevo",
@@ -195,6 +206,7 @@ export async function saveCajaLuzQuote(
     route: "/cotizadores/cajas-luz",
     quote_id: data.id,
     metadata: {
+      title: quoteTitle,
       quote_number: quoteNumber,
       client_name: insertPayload.client_name,
       seller_name: insertPayload.seller_name,
