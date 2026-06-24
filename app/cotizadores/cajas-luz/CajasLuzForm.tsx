@@ -1,7 +1,14 @@
 "use client";
 
-import { Fragment, useMemo, useState, type ReactNode } from "react";
+import {
+  Fragment,
+  useMemo,
+  useState,
+  useTransition,
+  type ReactNode,
+} from "react";
 import type { CostRow, FormState } from "./_lib/types";
+import type { SaveQuotePayload, SaveQuoteResponse } from "./actions";
 import {
   ALTURA_CONDICIONES,
   CARATULAS,
@@ -12,8 +19,19 @@ import {
 import { calculateCajaLuz } from "./_lib/calculator";
 import { fixed, money } from "./_lib/format";
 
-export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
+export default function CajasLuzForm({
+  costRows,
+  saveAction,
+}: {
+  costRows: CostRow[];
+  saveAction?: (payload: SaveQuotePayload) => Promise<SaveQuoteResponse>;
+}) {
   const [form, setForm] = useState<FormState>(DEFAULT_FORM);
+
+  const [isSaving, startSaving] = useTransition();
+  const [saveMessage, setSaveMessage] = useState("");
+  const [saveError, setSaveError] = useState("");
+  const [lastQuoteNumber, setLastQuoteNumber] = useState("");
 
   const costMap = useMemo(() => {
     const map = new Map<string, number>();
@@ -37,6 +55,31 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
       ...current,
       [key]: value,
     }));
+  }
+
+  function handleSaveQuote() {
+    if (!saveAction) {
+      setSaveError("No está configurada la acción para guardar cotizaciones.");
+      return;
+    }
+
+    setSaveMessage("");
+    setSaveError("");
+
+    startSaving(async () => {
+      const response = await saveAction({
+        form,
+        result,
+      });
+
+      if (!response.ok) {
+        setSaveError(response.message);
+        return;
+      }
+
+      setLastQuoteNumber(response.quoteNumber);
+      setSaveMessage(response.message);
+    });
   }
 
   const groupedPartidas = result.partidas.reduce<
@@ -71,7 +114,10 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
 
       <div className="grid gap-6 xl:grid-cols-12">
         <section className="rounded-2xl border border-neutral-800 bg-neutral-900 xl:col-span-4">
-          <SectionHeader number="01" title="Datos y configuración del proyecto" />
+          <SectionHeader
+            number="01"
+            title="Datos y configuración del proyecto"
+          />
 
           <div className="space-y-5 p-5">
             <FieldGroup title="Datos generales">
@@ -618,6 +664,48 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
               title="Utilidad"
               value={money(result.costos.utilidad)}
             />
+          </div>
+
+          <div className="mt-5 rounded-2xl border border-neutral-800 bg-neutral-950 p-4">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-sm font-black text-white">
+                  Guardar cotización
+                </p>
+
+                <p className="mt-1 text-xs leading-5 text-neutral-500">
+                  Guarda esta cotización como borrador en Supabase para
+                  consultarla después.
+                </p>
+
+                {lastQuoteNumber && (
+                  <p className="mt-2 text-xs font-bold text-yellow-300">
+                    Última cotización guardada: {lastQuoteNumber}
+                  </p>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={handleSaveQuote}
+                disabled={isSaving}
+                className="rounded-2xl bg-yellow-400 px-5 py-3 text-sm font-black uppercase tracking-wide text-neutral-950 transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isSaving ? "Guardando..." : "Guardar cotización"}
+              </button>
+            </div>
+
+            {saveMessage && (
+              <div className="mt-4 rounded-2xl border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm font-semibold text-green-200">
+                {saveMessage}
+              </div>
+            )}
+
+            {saveError && (
+              <div className="mt-4 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-200">
+                {saveError}
+              </div>
+            )}
           </div>
         </div>
       </section>
