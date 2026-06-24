@@ -595,30 +595,23 @@ function getPrecioState(margen: number) {
   return "MARGEN BAJO, REVISAR COSTOS O PRECIO";
 }
 
-function getFabricationHours(areaFrenteM2: number, personas: number) {
-  const base =
-    areaFrenteM2 <= 1
-      ? 8
-      : areaFrenteM2 <= 6
-        ? 18
-        : 24 + (areaFrenteM2 - 6) * 2;
+function getFabricationHours(areaFrenteM2: number) {
+  if (areaFrenteM2 <= 1) return 8;
+  if (areaFrenteM2 <= 6) return 18;
 
-  return Math.ceil(base / Math.max(personas, 1));
+  return Math.ceil(24 + (areaFrenteM2 - 6) * 2);
 }
 
 function getInstallationHours({
   incluyeInstalacion,
   areaFrenteM2,
-  personas,
 }: {
   incluyeInstalacion: string;
   areaFrenteM2: number;
-  personas: number;
 }) {
   if (incluyeInstalacion !== "SI") return 0;
 
-  const base = Math.max(4, areaFrenteM2 * 1.5);
-  return Math.ceil(base / Math.max(personas, 1));
+  return Math.ceil(Math.max(4, areaFrenteM2 * 1.5));
 }
 
 export function calculateCajaLuz(
@@ -655,6 +648,26 @@ export function calculateCajaLuz(
   const desarrolloLaminaM = desarrolloLaminaCm / 100;
   const areaCantoM2 = perimetroMl * desarrolloLaminaM;
   const areaTotalLaminaM2 = areaRespaldoM2 + areaCantoM2;
+
+  const personasFabricacion = Math.max(toNumber(form.personasFabricacion), 1);
+  const personasInstalacion = Math.max(toNumber(form.personasInstalacion), 1);
+
+  const fabricacionHoras = form.usarTiemposAutomaticos
+    ? getFabricationHours(areaFrenteM2)
+    : Math.max(toNumber(form.horasFabricacionManual), 0);
+
+  const instalacionHoras =
+    form.incluyeInstalacion === "SI"
+      ? form.usarTiemposAutomaticos
+        ? getInstallationHours({
+            incluyeInstalacion: form.incluyeInstalacion,
+            areaFrenteM2,
+          })
+        : Math.max(toNumber(form.horasInstalacionManual), 0)
+      : 0;
+
+  const horasHombreFabricacion = fabricacionHoras * personasFabricacion;
+  const horasHombreInstalacion = instalacionHoras * personasInstalacion;
 
   const lines: MaterialLine[] = [];
 
@@ -893,16 +906,29 @@ export function calculateCajaLuz(
     lines,
     grupo: "Mano de obra",
     concepto: "Mano de obra fabricación",
-    cantidad: areaFrenteM2,
-    unidad: "m²",
-    costoUnitario: toNumber(form.manoObraM2),
+    sku: "MO_FABRICACION_HORA",
+    cantidad: horasHombreFabricacion,
+    unidad: "HORA-HOMBRE",
+    costoUnitario: cost(costMap, "MO_FABRICACION_HORA"),
   });
 
   if (form.incluyeInstalacion === "SI") {
     addLine({
       lines,
+      grupo: "Mano de obra",
+      concepto: "Mano de obra instalación",
+      sku: "MO_INSTALACION_HORA",
+      cantidad: horasHombreInstalacion,
+      unidad: "HORA-HOMBRE",
+      costoUnitario: cost(costMap, "MO_INSTALACION_HORA"),
+    });
+  }
+
+  if (form.incluyeInstalacion === "SI" && toNumber(form.instalacion) > 0) {
+    addLine({
+      lines,
       grupo: "Servicios",
-      concepto: "Instalación",
+      concepto: "Servicio instalación extra",
       cantidad: 1,
       unidad: "SERVICIO",
       costoUnitario: toNumber(form.instalacion),
@@ -949,17 +975,6 @@ export function calculateCajaLuz(
   const totalConIva = precioSinIva + iva;
   const utilidad = precioSinIva - costoDirecto;
 
-  const fabricacionHoras = getFabricationHours(
-    areaFrenteM2,
-    Math.max(toNumber(form.personasFabricacion), 1)
-  );
-
-  const instalacionHoras = getInstallationHours({
-    incluyeInstalacion: form.incluyeInstalacion,
-    areaFrenteM2,
-    personas: Math.max(toNumber(form.personasInstalacion), 1),
-  });
-
   const missingCost = lines.some(
     (line) =>
       line.cantidad > 0 &&
@@ -972,8 +987,8 @@ export function calculateCajaLuz(
       ? "REVISAR COSTOS EN CATÁLOGO"
       : "SELECCIONES COHERENTES",
     servicios:
-      form.incluyeInstalacion === "SI" && instalacionHoras <= 0
-        ? "REVISAR INSTALACIÓN"
+      form.incluyeInstalacion === "SI" && horasHombreInstalacion <= 0
+        ? "REVISAR MANO DE OBRA INSTALACIÓN"
         : "PRECIOS ESPECIALES COMPLETOS",
     impresion:
       form.caratula === "Lona backlight impresa" ||
@@ -1038,6 +1053,8 @@ export function calculateCajaLuz(
     tiempos: {
       fabricacionHoras,
       instalacionHoras,
+      horasHombreFabricacion,
+      horasHombreInstalacion,
     },
     costos: {
       costoDirecto,

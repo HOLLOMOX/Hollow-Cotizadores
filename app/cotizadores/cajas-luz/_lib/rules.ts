@@ -71,6 +71,10 @@ export const DEFAULT_FORM: FormState = {
   personasFabricacion: "1",
   personasInstalacion: "2",
 
+  usarTiemposAutomaticos: true,
+  horasFabricacionManual: "8",
+  horasInstalacionManual: "4",
+
   materialExtra: "0",
   andamios: "0",
   numeroDescolgadas: "0",
@@ -83,7 +87,6 @@ export const DEFAULT_FORM: FormState = {
   tirasPorM2Micro: "20",
 
   costoCaratulaM2: "0",
-  manoObraM2: "0",
 
   instalacion: "0",
   extras: "0",

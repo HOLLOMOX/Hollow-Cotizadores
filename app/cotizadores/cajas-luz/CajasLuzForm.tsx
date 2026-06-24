@@ -180,13 +180,6 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
                   updateField("iluminacion", value as FormState["iluminacion"])
                 }
               />
-
-              <NumberField
-                label="Mano de obra"
-                suffix="$/m²"
-                value={form.manoObraM2}
-                onChange={(value) => updateField("manoObraM2", value)}
-              />
             </FieldGroup>
 
             <FieldGroup title="Instalación y traslado">
@@ -251,7 +244,7 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
               />
 
               <NumberField
-                label="Instalación"
+                label="Servicio instalación extra"
                 suffix="$"
                 value={form.instalacion}
                 onChange={(value) => updateField("instalacion", value)}
@@ -266,6 +259,12 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
             </FieldGroup>
 
             <FieldGroup title="Personas y tiempos">
+              <CheckboxField
+                label="Tiempos automáticos"
+                checked={form.usarTiemposAutomaticos}
+                onChange={(value) => updateField("usarTiemposAutomaticos", value)}
+              />
+
               <NumberField
                 label="Personas fabricación"
                 suffix="personas"
@@ -279,6 +278,33 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
                 value={form.personasInstalacion}
                 onChange={(value) => updateField("personasInstalacion", value)}
               />
+
+              {!form.usarTiemposAutomaticos && (
+                <>
+                  <NumberField
+                    label="Horas fabricación"
+                    suffix="h"
+                    value={form.horasFabricacionManual}
+                    onChange={(value) =>
+                      updateField("horasFabricacionManual", value)
+                    }
+                  />
+
+                  <NumberField
+                    label="Horas instalación"
+                    suffix="h"
+                    value={form.horasInstalacionManual}
+                    onChange={(value) =>
+                      updateField("horasInstalacionManual", value)
+                    }
+                  />
+                </>
+              )}
+
+              <InfoBox>
+                La mano de obra se calcula por hora-hombre: horas × personas ×
+                costo por hora desde catálogo.
+              </InfoBox>
             </FieldGroup>
 
             <FieldGroup title="Configuración de carátula">
@@ -396,18 +422,32 @@ export default function CajasLuzForm({ costRows }: { costRows: CostRow[] }) {
                   label="Tiempo real de fabricación"
                   value={`${result.tiempos.fabricacionHoras} h`}
                 />
+
                 <ResultRow
                   label="Tiempo real de instalación"
                   value={`${result.tiempos.instalacionHoras} h`}
                 />
+
+                <ResultRow
+                  label="Horas-hombre fabricación"
+                  value={`${result.tiempos.horasHombreFabricacion} h`}
+                />
+
+                <ResultRow
+                  label="Horas-hombre instalación"
+                  value={`${result.tiempos.horasHombreInstalacion} h`}
+                />
+
                 <ResultRow
                   label="Costo directo"
                   value={money(result.costos.costoDirecto)}
                 />
+
                 <ResultRow
                   label="Precio a cotizar S/IVA"
                   value={money(result.costos.precioSinIva)}
                 />
+
                 <ResultRow label="IVA" value={money(result.costos.iva)} />
               </div>
 

@@ -55,6 +55,10 @@ export type FormState = {
   personasFabricacion: string;
   personasInstalacion: string;
 
+  usarTiemposAutomaticos: boolean;
+  horasFabricacionManual: string;
+  horasInstalacionManual: string;
+
   materialExtra: string;
   andamios: string;
   numeroDescolgadas: string;
@@ -67,7 +71,6 @@ export type FormState = {
   tirasPorM2Micro: string;
 
   costoCaratulaM2: string;
-  manoObraM2: string;
 
   instalacion: string;
   extras: string;
@@ -145,6 +148,8 @@ export type QuoteResult = {
   tiempos: {
     fabricacionHoras: number;
     instalacionHoras: number;
+    horasHombreFabricacion: number;
+    horasHombreInstalacion: number;
   };
 
   costos: {
