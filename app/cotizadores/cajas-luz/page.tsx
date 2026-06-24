@@ -1,16 +1,20 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
+import type { CostRow } from "./_lib/types";
 import CajasLuzForm from "./CajasLuzForm";
+import GuestUsageGate from "./GuestUsageGate";
+import { consumeGuestCotizadorUse } from "./actions";
 
-type CostRow = {
-  sku: string;
-  name: string;
-  unit: string;
-  cost: number;
-  sale_price: number | null;
+type AccessRow = {
+  role: string;
+  active: boolean;
+  cotizador_limit: number | null;
+  cotizador_used: number;
+  cotizador_remaining: number | null;
+  can_use: boolean;
 };
 
-export default async function CajasDeLuzPage() {
+export default async function CajasLuzPage() {
   const supabase = await createClient();
 
   const {
@@ -21,38 +25,118 @@ export default async function CajasDeLuzPage() {
     redirect("/login");
   }
 
-  const { data: costRows, error } = await supabase
-    .from("cost_catalog")
-    .select("sku, name, unit, cost, sale_price")
-    .eq("active", true);
+  const { data: accessData, error: accessError } = await supabase.rpc(
+    "get_cotizador_access"
+  );
 
-  if (error) {
-    throw new Error(error.message);
+  const access = Array.isArray(accessData)
+    ? (accessData[0] as AccessRow | undefined)
+    : (accessData as AccessRow | undefined);
+
+  if (accessError || !access) {
+    return (
+      <BlockedPage
+        title="No se pudo validar tu acceso"
+        message="Tu usuario no tiene perfil asignado o hubo un error al validar permisos. Revisa user_profiles en Supabase."
+      />
+    );
+  }
+
+  if (!access.active) {
+    return (
+      <BlockedPage
+        title="Usuario inactivo"
+        message="Tu usuario está desactivado. Contacta al administrador."
+      />
+    );
+  }
+
+  if (!access.can_use && access.role === "invitado") {
+    return (
+      <BlockedPage
+        title="Límite de invitado agotado"
+        message="Esta cuenta invitada ya usó las 5 oportunidades disponibles para el cotizador."
+      />
+    );
+  }
+
+  const { data: costRows, error: costError } = await supabase
+    .from("cost_catalog")
+    .select("sku,name,unit,cost,sale_price")
+    .eq("active", true)
+    .order("category", { ascending: true })
+    .order("name", { ascending: true });
+
+  if (costError) {
+    return (
+      <BlockedPage
+        title="No se pudo cargar el catálogo"
+        message="Hubo un error cargando los costos. Revisa permisos RLS de cost_catalog."
+      />
+    );
+  }
+
+  const rows = (costRows ?? []) as CostRow[];
+
+  if (access.role === "invitado") {
+    return (
+      <main className="min-h-screen bg-neutral-950 px-4 py-8 text-white sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <GuestUsageGate
+            costRows={rows}
+            initialLimit={access.cotizador_limit}
+            initialUsed={access.cotizador_used}
+            initialRemaining={access.cotizador_remaining}
+            consumeAction={consumeGuestCotizadorUse}
+          />
+        </div>
+      </main>
+    );
   }
 
   return (
-    <main className="min-h-screen bg-neutral-950 p-6 text-white">
+    <main className="min-h-screen bg-neutral-950 px-4 py-8 text-white sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
-        <a href="/" className="text-sm text-neutral-400 hover:text-white">
-          ← Volver
-        </a>
-
-        <div className="mt-6">
-          <p className="mb-3 text-sm uppercase tracking-[0.3em] text-neutral-500">
+        <div className="mb-6 rounded-2xl border border-neutral-800 bg-neutral-900 p-4">
+          <p className="text-xs font-bold uppercase tracking-[0.25em] text-yellow-400">
             Hollow Cotizadores
           </p>
-
-          <h1 className="text-3xl font-semibold">
-            Cotizador de cajas de luz
-          </h1>
-
-          <p className="mt-2 max-w-2xl text-sm text-neutral-400">
-            Cálculo inicial para fabricación de caja de luz: medidas en metros,
-            frente, estructura, laterales, LED, fuente, mano de obra y margen.
+          <h1 className="mt-2 text-2xl font-black">Cotizador de cajas de luz</h1>
+          <p className="mt-1 text-sm text-neutral-400">
+            Usuario: {user.email} · Rol: {access.role}
           </p>
         </div>
 
-        <CajasLuzForm costRows={(costRows ?? []) as CostRow[]} />
+        <CajasLuzForm costRows={rows} />
+      </div>
+    </main>
+  );
+}
+
+function BlockedPage({
+  title,
+  message,
+}: {
+  title: string;
+  message: string;
+}) {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-neutral-950 px-6 text-white">
+      <div className="w-full max-w-xl rounded-3xl border border-neutral-800 bg-neutral-900 p-8 text-center shadow-2xl shadow-black/40">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-red-500/10 text-2xl">
+          ⚠️
+        </div>
+
+        <h1 className="mt-6 text-2xl font-black">{title}</h1>
+
+        <p className="mt-3 text-sm leading-6 text-neutral-400">{message}</p>
+
+        <a
+          href="/"
+          className="mt-8 inline-flex rounded-2xl bg-yellow-400 px-5 py-3 text-sm font-black uppercase tracking-wide text-neutral-950 transition hover:bg-yellow-300"
+        >
+          Volver al inicio
+        </a>
       </div>
     </main>
   );
