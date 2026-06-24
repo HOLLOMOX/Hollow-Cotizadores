@@ -18,6 +18,16 @@ export type CurrentUserProfile = {
   cotizador_used: number;
 };
 
+type ProfileRpcRow = {
+  id: string;
+  email: string | null;
+  full_name: string | null;
+  role: string;
+  active: boolean;
+  cotizador_limit: number | null;
+  cotizador_used: number | null;
+};
+
 export async function getCurrentUserProfile() {
   const supabase = await createClient();
 
@@ -33,15 +43,43 @@ export async function getCurrentUserProfile() {
     };
   }
 
-  const { data: profile } = await supabase
-    .from("user_profiles")
-    .select("id,email,full_name,role,active,cotizador_limit,cotizador_used")
-    .eq("id", user.id)
-    .single();
+  const { data, error } = await supabase.rpc("get_my_profile");
+
+  if (error) {
+    console.error("get_my_profile error:", error.message);
+
+    return {
+      user,
+      profile: null,
+      supabase,
+    };
+  }
+
+  const row = Array.isArray(data)
+    ? (data[0] as ProfileRpcRow | undefined)
+    : (data as ProfileRpcRow | undefined);
+
+  if (!row) {
+    return {
+      user,
+      profile: null,
+      supabase,
+    };
+  }
+
+  const profile: CurrentUserProfile = {
+    id: row.id,
+    email: row.email,
+    full_name: row.full_name,
+    role: row.role as UserRole,
+    active: Boolean(row.active),
+    cotizador_limit: row.cotizador_limit,
+    cotizador_used: Number(row.cotizador_used ?? 0),
+  };
 
   return {
     user,
-    profile: profile as CurrentUserProfile | null,
+    profile,
     supabase,
   };
 }
@@ -59,7 +97,11 @@ export async function requireLogin() {
 export async function requireAdmin() {
   const result = await requireLogin();
 
-  if (!result.profile || result.profile.active === false) {
+  if (!result.profile) {
+    redirect("/no-autorizado?reason=no-profile");
+  }
+
+  if (result.profile.active === false) {
     redirect("/no-autorizado?reason=inactive");
   }
 
