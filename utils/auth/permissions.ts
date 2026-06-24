@@ -106,6 +106,25 @@ export async function getAdminAccess() {
   };
 }
 
+export async function getCatalogAccess() {
+  const result = await requireLogin();
+
+  const role = result.profile?.role;
+
+  const allowed =
+    result.profile?.active === true &&
+    (role === "admin" || role === "vendedor");
+
+  const canEdit =
+    result.profile?.active === true && result.profile.role === "admin";
+
+  return {
+    ...result,
+    allowed,
+    canEdit,
+  };
+}
+
 export async function requireAdmin() {
   const result = await requireLogin();
 
@@ -138,9 +157,29 @@ export function canUseCotizadores(role?: string | null) {
 }
 
 export function canViewCatalog(role?: string | null) {
+  return role === "admin" || role === "vendedor";
+}
+
+export function canEditCatalog(role?: string | null) {
   return role === "admin";
 }
 
 export function canViewAdmin(role?: string | null) {
   return role === "admin";
+}
+
+export function canViewInternalCosts(role?: string | null) {
+  return role === "admin" || role === "vendedor";
+}
+
+export function canViewProductionMaterials(role?: string | null) {
+  return role === "admin" || role === "vendedor" || role === "produccion";
+}
+
+export function canViewSalePrice(role?: string | null) {
+  return role === "admin" || role === "vendedor" || role === "invitado";
+}
+
+export function canViewUtility(role?: string | null) {
+  return role === "admin" || role === "vendedor";
 }
