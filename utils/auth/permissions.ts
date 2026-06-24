@@ -10,7 +10,7 @@ export type UserRole =
 
 export type CurrentUserProfile = {
   id: string;
-  email: string;
+  email: string | null;
   full_name: string | null;
   role: UserRole;
   active: boolean;
@@ -35,9 +35,7 @@ export async function getCurrentUserProfile() {
 
   const { data: profile } = await supabase
     .from("user_profiles")
-    .select(
-      "id,email,full_name,role,active,cotizador_limit,cotizador_used"
-    )
+    .select("id,email,full_name,role,active,cotizador_limit,cotizador_used")
     .eq("id", user.id)
     .single();
 

@@ -22,15 +22,11 @@ type PresenceRow = {
 
 type UsageRow = {
   id: string;
+  user_id: string | null;
   event_type: string;
   module: string | null;
   route: string | null;
   created_at: string;
-  user_profiles?: {
-    email: string | null;
-    full_name: string | null;
-    role: string;
-  } | null;
 };
 
 export default async function AdminPage() {
@@ -64,24 +60,17 @@ export default async function AdminPage() {
 
   const { data: usage } = await supabase
     .from("usage_events")
-    .select(
-      `
-      id,
-      event_type,
-      module,
-      route,
-      created_at,
-      user_profiles:user_id (
-        email,
-        full_name,
-        role
-      )
-    `
-    )
+    .select("id,user_id,event_type,module,route,created_at")
     .order("created_at", { ascending: false })
     .limit(20);
 
   const allUsers = (users ?? []) as UserProfile[];
+  const presenceRows = (presence ?? []) as PresenceRow[];
+  const usageRows = (usage ?? []) as UsageRow[];
+
+  const usersById = new Map<string, UserProfile>();
+  allUsers.forEach((user) => usersById.set(user.id, user));
+
   const guest = allUsers.find((item) => item.email === "invitado@hollow.mx");
 
   return (
@@ -112,13 +101,13 @@ export default async function AdminPage() {
           <MetricCard
             title="Usuarios"
             value={String(allUsers.length)}
-            description="Usuarios registrados en user_profiles"
+            description="Usuarios registrados"
           />
 
           <MetricCard
             title="Activos ahora"
             value={String(activeUsersCount ?? 0)}
-            description="Vistos en los últimos 2 minutos"
+            description="Últimos 2 minutos"
           />
 
           <MetricCard
@@ -130,7 +119,7 @@ export default async function AdminPage() {
           <MetricCard
             title="Eventos"
             value={String(usageCount ?? 0)}
-            description="Registros de uso del sistema"
+            description="Uso registrado"
           />
         </section>
 
@@ -212,12 +201,15 @@ export default async function AdminPage() {
                       <td className="px-3 py-3 font-semibold text-white">
                         {user.email || "—"}
                       </td>
+
                       <td className="px-3 py-3 text-neutral-400">
                         {user.full_name || "—"}
                       </td>
+
                       <td className="px-3 py-3">
                         <RoleBadge role={user.role} />
                       </td>
+
                       <td className="px-3 py-3">
                         {user.active ? (
                           <span className="text-green-300">Activo</span>
@@ -225,12 +217,15 @@ export default async function AdminPage() {
                           <span className="text-red-300">Inactivo</span>
                         )}
                       </td>
+
                       <td className="px-3 py-3 text-right text-neutral-300">
                         {user.cotizador_limit ?? "∞"}
                       </td>
+
                       <td className="px-3 py-3 text-right text-neutral-300">
                         {user.cotizador_used ?? 0}
                       </td>
+
                       <td className="px-3 py-3 text-right font-bold text-yellow-300">
                         {remaining ?? "∞"}
                       </td>
@@ -250,26 +245,36 @@ export default async function AdminPage() {
             />
 
             <div className="space-y-3 p-5">
-              {((presence ?? []) as PresenceRow[]).length === 0 && (
+              {presenceRows.length === 0 && (
                 <EmptyState text="Todavía no hay presencia registrada." />
               )}
 
-              {((presence ?? []) as PresenceRow[]).map((item) => (
-                <div
-                  key={item.user_id}
-                  className="rounded-2xl border border-neutral-800 bg-neutral-950 p-4"
-                >
-                  <p className="text-sm font-bold text-white">
-                    {item.module || "Sin módulo"}
-                  </p>
-                  <p className="mt-1 text-xs text-neutral-500">
-                    Ruta: {item.route || "—"}
-                  </p>
-                  <p className="mt-1 text-xs text-neutral-500">
-                    Última vez: {formatDate(item.last_seen)}
-                  </p>
-                </div>
-              ))}
+              {presenceRows.map((item) => {
+                const user = usersById.get(item.user_id);
+
+                return (
+                  <div
+                    key={item.user_id}
+                    className="rounded-2xl border border-neutral-800 bg-neutral-950 p-4"
+                  >
+                    <p className="text-sm font-bold text-white">
+                      {user?.email || item.user_id}
+                    </p>
+
+                    <p className="mt-1 text-xs text-neutral-500">
+                      Módulo: {item.module || "—"}
+                    </p>
+
+                    <p className="mt-1 text-xs text-neutral-500">
+                      Ruta: {item.route || "—"}
+                    </p>
+
+                    <p className="mt-1 text-xs text-neutral-500">
+                      Última vez: {formatDate(item.last_seen)}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -280,34 +285,38 @@ export default async function AdminPage() {
             />
 
             <div className="space-y-3 p-5">
-              {((usage ?? []) as UsageRow[]).length === 0 && (
+              {usageRows.length === 0 && (
                 <EmptyState text="Todavía no hay eventos registrados." />
               )}
 
-              {((usage ?? []) as UsageRow[]).map((item) => (
-                <div
-                  key={item.id}
-                  className="rounded-2xl border border-neutral-800 bg-neutral-950 p-4"
-                >
-                  <div className="flex items-center justify-between gap-4">
-                    <p className="text-sm font-bold text-white">
-                      {item.event_type}
+              {usageRows.map((item) => {
+                const user = item.user_id ? usersById.get(item.user_id) : null;
+
+                return (
+                  <div
+                    key={item.id}
+                    className="rounded-2xl border border-neutral-800 bg-neutral-950 p-4"
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      <p className="text-sm font-bold text-white">
+                        {item.event_type}
+                      </p>
+
+                      <span className="text-xs text-neutral-500">
+                        {formatDate(item.created_at)}
+                      </span>
+                    </div>
+
+                    <p className="mt-1 text-xs text-neutral-500">
+                      Usuario: {user?.email || "—"}
                     </p>
 
-                    <span className="text-xs text-neutral-500">
-                      {formatDate(item.created_at)}
-                    </span>
+                    <p className="mt-1 text-xs text-neutral-500">
+                      Módulo: {item.module || "—"} · Ruta: {item.route || "—"}
+                    </p>
                   </div>
-
-                  <p className="mt-1 text-xs text-neutral-500">
-                    Usuario: {item.user_profiles?.email || "—"}
-                  </p>
-
-                  <p className="mt-1 text-xs text-neutral-500">
-                    Módulo: {item.module || "—"} · Ruta: {item.route || "—"}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </section>
@@ -341,7 +350,11 @@ function MetricCard({
       <p className="text-xs font-bold uppercase tracking-wide text-neutral-500">
         {title}
       </p>
-      <p className="mt-3 text-3xl font-black text-white">{value}</p>
+
+      <p className="mt-3 break-words text-2xl font-black text-white md:text-3xl">
+        {value}
+      </p>
+
       <p className="mt-2 text-xs leading-5 text-neutral-500">{description}</p>
     </div>
   );
@@ -363,11 +376,9 @@ function SectionTitle({
 }
 
 function RoleBadge({ role }: { role: string }) {
-  const label = role || "sin rol";
-
   return (
     <span className="rounded-full border border-yellow-500/30 bg-yellow-500/10 px-3 py-1 text-xs font-bold uppercase text-yellow-300">
-      {label}
+      {role || "sin rol"}
     </span>
   );
 }
