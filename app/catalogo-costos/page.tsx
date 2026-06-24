@@ -1,3 +1,7 @@
+import { requireAdmin } from "@/utils/auth/permissions";
+
+export default async function CatalogoCostosPage() {
+  await requireAdmin();
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { createCostItem, updateCostItem } from "./actions";
