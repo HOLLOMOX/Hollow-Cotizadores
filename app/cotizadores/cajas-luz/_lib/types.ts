@@ -16,8 +16,8 @@ export type TipoCaja =
 export type Caratula =
   | "Lona backlight impresa"
   | "Lona backlight rotulada"
-  | "Acrílico rotulado"
-  | "Acrílico impreso"
+  | "Acrílico rotulado con vinil de corte"
+  | "Acrílico rotulado con impresión de vinil"
   | "Policarbonato"
   | "Otro";
 

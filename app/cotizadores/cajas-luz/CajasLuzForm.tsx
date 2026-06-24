@@ -719,13 +719,20 @@ function CaratulaInfo({ caratula }: { caratula: string }) {
       "Usa LONA_BACKLIGHT + IMPRESION_LONA_HP.",
     "Lona backlight rotulada":
       "Usa LONA_BACKLIGHT por m² + VINIL_CORTE_COLOR_ML estándar hasta 4 colores, 1 ML por color + ROTULADO_VINIL.",
-    "Acrílico rotulado":
+    "Acrílico rotulado con vinil de corte":
       "Usa ACRILICO_BLANCO_LECHOSO + VINIL_CORTE_TRANSLUCIDO + ROTULADO_VINIL.",
-    "Acrílico impreso":
-      "Usa ACRILICO_BLANCO_LECHOSO + IMPRESION_ACRILICO.",
+    "Acrílico rotulado con impresión de vinil":
+      "Usa ACRILICO_BLANCO_LECHOSO + VINIL_IMPRESO_M2 + ROTULADO_VINIL.",
     Policarbonato: "Usa POLICARBONATO.",
     Otro: "Usa costo manual de carátula por m².",
   };
+
+  return (
+    <InfoBox>
+      {descriptions[caratula] || "Configuración no definida."}
+    </InfoBox>
+  );
+}
 
   return (
     <InfoBox>
