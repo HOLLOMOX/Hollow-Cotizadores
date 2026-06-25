@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
-import type { CostRow } from "./_lib/types";
+import type { CostRow, InstallationCondition } from "./_lib/types";
 import CajasLuzForm from "./CajasLuzForm";
 import GuestUsageGate from "./GuestUsageGate";
 import { consumeGuestCotizadorUse, saveCajaLuzQuote } from "./actions";
@@ -12,6 +12,15 @@ type AccessRow = {
   cotizador_used: number;
   cotizador_remaining: number | null;
   can_use: boolean;
+};
+
+type InstallationConditionRow = {
+  code: string;
+  label: string;
+  percent_extra: number | string;
+  active: boolean;
+  sort_order: number;
+  notes: string | null;
 };
 
 export default async function CajasLuzPage() {
@@ -55,7 +64,7 @@ export default async function CajasLuzPage() {
     return (
       <BlockedPage
         title="Límite de invitado agotado"
-        message="Esta cuenta invitada ya usó las 5 oportunidades disponibles para el cotizador."
+        message="Esta cuenta invitada ya usó las oportunidades disponibles para el cotizador."
       />
     );
   }
@@ -76,7 +85,24 @@ export default async function CajasLuzPage() {
     );
   }
 
+  const { data: conditionRows } = await supabase
+    .from("installation_conditions")
+    .select("code,label,percent_extra,active,sort_order,notes")
+    .eq("active", true)
+    .order("sort_order", { ascending: true });
+
   const rows = (costRows ?? []) as CostRow[];
+
+  const installationConditions: InstallationCondition[] = (
+    (conditionRows ?? []) as InstallationConditionRow[]
+  ).map((condition) => ({
+    code: condition.code,
+    label: condition.label,
+    percent_extra: Number(condition.percent_extra ?? 0),
+    active: condition.active,
+    sort_order: condition.sort_order,
+    notes: condition.notes,
+  }));
 
   if (access.role === "invitado") {
     return (
@@ -84,6 +110,7 @@ export default async function CajasLuzPage() {
         <div className="mx-auto max-w-7xl">
           <GuestUsageGate
             costRows={rows}
+            installationConditions={installationConditions}
             initialLimit={access.cotizador_limit}
             initialUsed={access.cotizador_used}
             initialRemaining={access.cotizador_remaining}
@@ -115,6 +142,7 @@ export default async function CajasLuzPage() {
 
         <CajasLuzForm
           costRows={rows}
+          installationConditions={installationConditions}
           saveAction={saveCajaLuzQuote}
           userRole={access.role}
         />

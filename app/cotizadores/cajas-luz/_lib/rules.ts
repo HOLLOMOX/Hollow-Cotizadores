@@ -103,23 +103,6 @@ export const DEFAULT_FORM: FormState = {
 export function getAlturaInstalacionRule(alturaCondicion: string) {
   const value = alturaCondicion.toLowerCase();
 
-  /*
-    El porcentaje se aplica SOLO sobre la mano de obra de instalación,
-    no sobre toda la cotización.
-
-    Tabla:
-    - A NIVEL DE PISO / BAJA ALTURA: 0%
-    - A 3 METROS: 10%
-    - A 4 METROS: 15%
-    - MAYOR A 4 METROS: 25%
-    - CON ESCALERA: 15%
-    - CON ANDAMIOS: 25%
-    - EN FACHADA: 20%
-    - EN TECHO: 30%
-    - EN ALTURA CON DESCOLGADA: 40%
-    - INSTALACIÓN ESPECIAL: 50%
-  */
-
   if (value.includes("especial")) {
     return {
       porcentajeExtra: 50,

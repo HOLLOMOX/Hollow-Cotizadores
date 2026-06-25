@@ -7,7 +7,11 @@ import {
   useTransition,
   type ReactNode,
 } from "react";
-import type { CostRow, FormState } from "./_lib/types";
+import type {
+  CostRow,
+  FormState,
+  InstallationCondition,
+} from "./_lib/types";
 import type { SaveQuotePayload, SaveQuoteResponse } from "./actions";
 import {
   ALTURA_CONDICIONES,
@@ -21,10 +25,12 @@ import { fixed, money } from "./_lib/format";
 
 export default function CajasLuzForm({
   costRows,
+  installationConditions,
   saveAction,
   userRole,
 }: {
   costRows: CostRow[];
+  installationConditions: InstallationCondition[];
   saveAction?: (payload: SaveQuotePayload) => Promise<SaveQuoteResponse>;
   userRole: string;
 }) {
@@ -50,6 +56,11 @@ export default function CajasLuzForm({
   const isProductionOnly = role === "produccion";
   const isGuest = role === "invitado";
 
+  const installationConditionOptions =
+    installationConditions.length > 0
+      ? installationConditions.map((condition) => condition.label)
+      : ALTURA_CONDICIONES;
+
   const costMap = useMemo(() => {
     const map = new Map<string, number>();
 
@@ -61,8 +72,8 @@ export default function CajasLuzForm({
   }, [costRows]);
 
   const result = useMemo(() => {
-    return calculateCajaLuz(form, costMap);
-  }, [form, costMap]);
+    return calculateCajaLuz(form, costMap, installationConditions);
+  }, [form, costMap, installationConditions]);
 
   function updateField<K extends keyof FormState>(
     key: K,
@@ -97,6 +108,24 @@ export default function CajasLuzForm({
       setLastQuoteNumber(response.quoteNumber);
       setSaveMessage(response.message);
     });
+  }
+
+  function handleResetForm() {
+    setForm(DEFAULT_FORM);
+    setSaveMessage("");
+    setSaveError("");
+    setLastQuoteNumber("");
+  }
+
+  async function handleCopyText() {
+    try {
+      await navigator.clipboard.writeText(result.textoCotizacion);
+      setSaveMessage("Texto copiado correctamente.");
+      setSaveError("");
+    } catch {
+      setSaveError("No se pudo copiar el texto.");
+      setSaveMessage("");
+    }
   }
 
   const groupedPartidas = result.partidas.reduce<
@@ -279,7 +308,7 @@ export default function CajasLuzForm({
               <SelectField
                 label="Altura / condición"
                 value={form.alturaCondicion}
-                options={ALTURA_CONDICIONES}
+                options={installationConditionOptions}
                 onChange={(value) => updateField("alturaCondicion", value)}
               />
 
@@ -686,6 +715,24 @@ export default function CajasLuzForm({
             <p className="text-sm leading-7 text-neutral-200">
               {result.textoCotizacion}
             </p>
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={handleCopyText}
+              className="rounded-2xl border border-neutral-700 bg-neutral-950 px-5 py-3 text-sm font-black uppercase tracking-wide text-neutral-200 transition hover:border-yellow-400 hover:text-yellow-300"
+            >
+              Copiar texto
+            </button>
+
+            <button
+              type="button"
+              onClick={handleResetForm}
+              className="rounded-2xl border border-red-500/30 bg-red-500/10 px-5 py-3 text-sm font-black uppercase tracking-wide text-red-300 transition hover:border-red-400 hover:bg-red-500/20"
+            >
+              Limpiar formulario
+            </button>
           </div>
 
           <div className="mt-4 grid gap-3 md:grid-cols-4">

@@ -1,11 +1,3 @@
-export type CostRow = {
-  sku: string;
-  name: string;
-  unit: string;
-  cost: number;
-  sale_price: number | null;
-};
-
 export type TipoCaja =
   | "Una vista"
   | "Doble vista"
@@ -28,7 +20,22 @@ export type Iluminacion =
   | "Micro LEDs"
   | "Sin iluminación";
 
-export type SiNo = "SI" | "NO";
+export type CostRow = {
+  sku: string;
+  name: string;
+  unit: string;
+  cost: number;
+  sale_price: number | null;
+};
+
+export type InstallationCondition = {
+  code: string;
+  label: string;
+  percent_extra: number;
+  active?: boolean;
+  sort_order?: number;
+  notes?: string | null;
+};
 
 export type FormState = {
   cliente: string;
@@ -47,7 +54,7 @@ export type FormState = {
   caratula: Caratula;
   iluminacion: Iluminacion;
 
-  incluyeInstalacion: SiNo;
+  incluyeInstalacion: "SI" | "NO";
   alturaCondicion: string;
   traslado: string;
   disenoGrafico: string;
@@ -96,13 +103,6 @@ export type MaterialLine = {
   unidad: string;
   costoUnitario: number;
   total: number;
-};
-
-export type ValidationResult = {
-  material: string;
-  servicios: string;
-  impresion: string;
-  precio: string;
 };
 
 export type QuoteResult = {
@@ -161,7 +161,13 @@ export type QuoteResult = {
     margenPorcentaje: number;
   };
 
-  validations: ValidationResult;
+  validations: {
+    material: string;
+    servicios: string;
+    impresion: string;
+    precio: string;
+  };
+
   partidas: MaterialLine[];
   textoCotizacion: string;
 };
