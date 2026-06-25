@@ -37,15 +37,16 @@ export const ILUMINACIONES: Iluminacion[] = [
 ];
 
 export const ALTURA_CONDICIONES = [
-  "A nivel de piso",
-  "Pared / fachada",
-  "Muro",
-  "Azotea",
-  "Altura con escalera",
-  "Altura con andamio",
-  "Altura grande",
-  "Altura extrema / maniobra especial",
-  "Sin condición especial",
+  "A NIVEL DE PISO / BAJA ALTURA",
+  "A 3 METROS",
+  "A 4 METROS",
+  "MAYOR A 4 METROS",
+  "CON ESCALERA",
+  "CON ANDAMIOS",
+  "EN FACHADA",
+  "EN TECHO",
+  "EN ALTURA CON DESCOLGADA",
+  "INSTALACIÓN ESPECIAL",
 ] as const;
 
 export const DEFAULT_FORM: FormState = {
@@ -66,7 +67,7 @@ export const DEFAULT_FORM: FormState = {
   iluminacion: "Lámparas LED",
 
   incluyeInstalacion: "SI",
-  alturaCondicion: "A nivel de piso",
+  alturaCondicion: "A NIVEL DE PISO / BAJA ALTURA",
   traslado: "Zona A",
   disenoGrafico: "15 min. de diseño gráfico",
 
@@ -102,48 +103,89 @@ export const DEFAULT_FORM: FormState = {
 export function getAlturaInstalacionRule(alturaCondicion: string) {
   const value = alturaCondicion.toLowerCase();
 
-  if (value.includes("extrema") || value.includes("maniobra")) {
+  /*
+    El porcentaje se aplica SOLO sobre la mano de obra de instalación,
+    no sobre toda la cotización.
+
+    Tabla:
+    - A NIVEL DE PISO / BAJA ALTURA: 0%
+    - A 3 METROS: 10%
+    - A 4 METROS: 15%
+    - MAYOR A 4 METROS: 25%
+    - CON ESCALERA: 15%
+    - CON ANDAMIOS: 25%
+    - EN FACHADA: 20%
+    - EN TECHO: 30%
+    - EN ALTURA CON DESCOLGADA: 40%
+    - INSTALACIÓN ESPECIAL: 50%
+  */
+
+  if (value.includes("especial")) {
+    return {
+      porcentajeExtra: 50,
+      label: "Instalación especial",
+    };
+  }
+
+  if (value.includes("descolgada")) {
     return {
       porcentajeExtra: 40,
-      label: "Altura extrema / maniobra especial",
+      label: "Instalación en altura con descolgada",
     };
   }
 
-  if (value.includes("azotea")) {
+  if (value.includes("techo")) {
     return {
       porcentajeExtra: 30,
-      label: "Instalación en azotea",
+      label: "Instalación en techo",
     };
   }
 
-  if (value.includes("andamio") || value.includes("grande")) {
+  if (value.includes("mayor a 4")) {
     return {
       porcentajeExtra: 25,
-      label: "Altura grande / con andamio",
+      label: "Instalación mayor a 4 metros",
+    };
+  }
+
+  if (value.includes("andamio")) {
+    return {
+      porcentajeExtra: 25,
+      label: "Instalación con andamios",
+    };
+  }
+
+  if (value.includes("fachada")) {
+    return {
+      porcentajeExtra: 20,
+      label: "Instalación en fachada",
+    };
+  }
+
+  if (value.includes("4 metros")) {
+    return {
+      porcentajeExtra: 15,
+      label: "Instalación a 4 metros",
     };
   }
 
   if (value.includes("escalera")) {
     return {
       porcentajeExtra: 15,
-      label: "Altura con escalera",
+      label: "Instalación con escalera",
     };
   }
 
-  if (
-    value.includes("pared") ||
-    value.includes("fachada") ||
-    value.includes("muro")
-  ) {
+  if (value.includes("3 metros")) {
     return {
       porcentajeExtra: 10,
-      label: "Pared / fachada / muro",
+      label: "Instalación a 3 metros",
     };
   }
 
   return {
     porcentajeExtra: 0,
-    label: "Sin incremento por altura",
+    label: "A nivel de piso / baja altura",
   };
 }
 
