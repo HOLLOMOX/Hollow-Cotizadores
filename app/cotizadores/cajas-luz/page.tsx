@@ -5,6 +5,9 @@ import CajasLuzForm from "./CajasLuzForm";
 import GuestUsageGate from "./GuestUsageGate";
 import { consumeGuestCotizadorUse, saveCajaLuzQuote } from "./actions";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 type AccessRow = {
   role: string;
   active: boolean;
@@ -22,6 +25,89 @@ type InstallationConditionRow = {
   sort_order: number;
   notes: string | null;
 };
+
+const FALLBACK_INSTALLATION_CONDITIONS: InstallationCondition[] = [
+  {
+    code: "NIVEL_PISO_BAJA_ALTURA",
+    label: "A NIVEL DE PISO / BAJA ALTURA",
+    percent_extra: 0,
+    active: true,
+    sort_order: 10,
+    notes: "Fallback local.",
+  },
+  {
+    code: "A_3_METROS",
+    label: "A 3 METROS",
+    percent_extra: 10,
+    active: true,
+    sort_order: 20,
+    notes: "Fallback local.",
+  },
+  {
+    code: "A_4_METROS",
+    label: "A 4 METROS",
+    percent_extra: 15,
+    active: true,
+    sort_order: 30,
+    notes: "Fallback local.",
+  },
+  {
+    code: "MAYOR_A_4_METROS",
+    label: "MAYOR A 4 METROS",
+    percent_extra: 25,
+    active: true,
+    sort_order: 40,
+    notes: "Fallback local.",
+  },
+  {
+    code: "CON_ESCALERA",
+    label: "CON ESCALERA",
+    percent_extra: 15,
+    active: true,
+    sort_order: 50,
+    notes: "Fallback local.",
+  },
+  {
+    code: "CON_ANDAMIOS",
+    label: "CON ANDAMIOS",
+    percent_extra: 25,
+    active: true,
+    sort_order: 60,
+    notes: "Fallback local.",
+  },
+  {
+    code: "EN_FACHADA",
+    label: "EN FACHADA",
+    percent_extra: 20,
+    active: true,
+    sort_order: 70,
+    notes: "Fallback local.",
+  },
+  {
+    code: "EN_TECHO",
+    label: "EN TECHO",
+    percent_extra: 30,
+    active: true,
+    sort_order: 80,
+    notes: "Fallback local.",
+  },
+  {
+    code: "EN_ALTURA_CON_DESCOLGADA",
+    label: "EN ALTURA CON DESCOLGADA",
+    percent_extra: 40,
+    active: true,
+    sort_order: 90,
+    notes: "Fallback local.",
+  },
+  {
+    code: "INSTALACION_ESPECIAL",
+    label: "INSTALACIÓN ESPECIAL",
+    percent_extra: 50,
+    active: true,
+    sort_order: 100,
+    notes: "Fallback local.",
+  },
+];
 
 export default async function CajasLuzPage() {
   const supabase = await createClient();
@@ -85,7 +171,7 @@ export default async function CajasLuzPage() {
     );
   }
 
-  const { data: conditionRows } = await supabase
+  const { data: conditionRows, error: conditionError } = await supabase
     .from("installation_conditions")
     .select("code,label,percent_extra,active,sort_order,notes")
     .eq("active", true)
@@ -93,7 +179,7 @@ export default async function CajasLuzPage() {
 
   const rows = (costRows ?? []) as CostRow[];
 
-  const installationConditions: InstallationCondition[] = (
+  const installationConditionsFromDb: InstallationCondition[] = (
     (conditionRows ?? []) as InstallationConditionRow[]
   ).map((condition) => ({
     code: condition.code,
@@ -103,6 +189,11 @@ export default async function CajasLuzPage() {
     sort_order: condition.sort_order,
     notes: condition.notes,
   }));
+
+  const installationConditions =
+    !conditionError && installationConditionsFromDb.length > 0
+      ? installationConditionsFromDb
+      : FALLBACK_INSTALLATION_CONDITIONS;
 
   if (access.role === "invitado") {
     return (
@@ -137,6 +228,14 @@ export default async function CajasLuzPage() {
 
           <p className="mt-1 text-sm text-neutral-400">
             Usuario: {user.email} · Rol: {access.role}
+          </p>
+
+          <p className="mt-2 text-xs text-neutral-500">
+            Condiciones de instalación cargadas:{" "}
+            {installationConditions.length}
+            {conditionError
+              ? " · Usando valores de respaldo porque Supabase no permitió leer la tabla."
+              : ""}
           </p>
         </div>
 
