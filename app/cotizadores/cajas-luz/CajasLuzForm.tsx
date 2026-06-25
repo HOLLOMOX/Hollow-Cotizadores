@@ -22,9 +22,11 @@ import { fixed, money } from "./_lib/format";
 export default function CajasLuzForm({
   costRows,
   saveAction,
+  userRole,
 }: {
   costRows: CostRow[];
   saveAction?: (payload: SaveQuotePayload) => Promise<SaveQuoteResponse>;
+  userRole: string;
 }) {
   const [form, setForm] = useState<FormState>(DEFAULT_FORM);
 
@@ -32,6 +34,21 @@ export default function CajasLuzForm({
   const [saveMessage, setSaveMessage] = useState("");
   const [saveError, setSaveError] = useState("");
   const [lastQuoteNumber, setLastQuoteNumber] = useState("");
+
+  const role = userRole || "invitado";
+
+  const canViewInternalCosts = role === "admin" || role === "vendedor";
+  const canViewProductPrices = role === "admin" || role === "vendedor";
+  const canViewUtility = role === "admin" || role === "vendedor";
+
+  const canViewProductionMaterials =
+    role === "admin" || role === "vendedor" || role === "produccion";
+
+  const canViewSalePrice =
+    role === "admin" || role === "vendedor" || role === "invitado";
+
+  const isProductionOnly = role === "produccion";
+  const isGuest = role === "invitado";
 
   const costMap = useMemo(() => {
     const map = new Map<string, number>();
@@ -110,11 +127,25 @@ export default function CajasLuzForm({
           </p>
 
           <p className="mt-3 rounded-xl bg-yellow-100 px-4 py-2 text-xs font-semibold italic text-neutral-900">
-            Captura solo los campos necesarios. Los cálculos internos se generan
-            automáticamente.
+            Rol actual: {role}. Los costos visibles dependen de los permisos
+            asignados.
           </p>
         </div>
       </div>
+
+      {isGuest && (
+        <PermissionNotice
+          title="Vista invitado"
+          text="Solo puedes ver el precio final y el texto para cliente. No se muestran materiales, SKUs, costos internos ni precios de productos."
+        />
+      )}
+
+      {isProductionOnly && (
+        <PermissionNotice
+          title="Vista producción"
+          text="Puedes ver materiales, SKUs, cantidades y datos técnicos. No se muestran precios, costos internos, utilidad ni margen."
+        />
+      )}
 
       <div className="grid gap-6 xl:grid-cols-12">
         <section className="rounded-2xl border border-neutral-800 bg-neutral-900 xl:col-span-4">
@@ -466,7 +497,7 @@ export default function CajasLuzForm({
           <div className="space-y-5 p-5">
             <div className="rounded-2xl border border-neutral-800 bg-neutral-950 p-5">
               <p className="text-center text-xs font-semibold uppercase tracking-wide text-yellow-400">
-                Resumen simple para el vendedor
+                Resumen según permisos del rol
               </p>
 
               <div className="mt-5 space-y-3">
@@ -490,51 +521,92 @@ export default function CajasLuzForm({
                   value={`${result.tiempos.horasHombreInstalacion} h`}
                 />
 
-                <ResultRow
-                  label="Costo directo"
-                  value={money(result.costos.costoDirecto)}
-                />
+                {canViewInternalCosts && (
+                  <ResultRow
+                    label="Costo directo"
+                    value={money(result.costos.costoDirecto)}
+                  />
+                )}
 
-                <ResultRow
-                  label="Precio a cotizar S/IVA"
-                  value={money(result.costos.precioSinIva)}
-                />
+                {canViewSalePrice && (
+                  <>
+                    <ResultRow
+                      label="Precio a cotizar S/IVA"
+                      value={money(result.costos.precioSinIva)}
+                    />
 
-                <ResultRow label="IVA" value={money(result.costos.iva)} />
+                    <ResultRow label="IVA" value={money(result.costos.iva)} />
+                  </>
+                )}
+
+                {canViewUtility && (
+                  <ResultRow
+                    label="Utilidad"
+                    value={money(result.costos.utilidad)}
+                  />
+                )}
+
+                {canViewUtility && (
+                  <ResultRow
+                    label="Margen interno"
+                    value={`${fixed(result.costos.margenPorcentaje)}%`}
+                  />
+                )}
               </div>
 
-              <div className="mt-5 rounded-xl bg-red-700 px-4 py-4 text-white">
-                <div className="flex items-center justify-between gap-4">
-                  <span className="text-sm font-bold uppercase">
-                    Total con IVA
-                  </span>
+              {canViewSalePrice && (
+                <div className="mt-5 rounded-xl bg-red-700 px-4 py-4 text-white">
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-sm font-bold uppercase">
+                      Total con IVA
+                    </span>
 
-                  <span className="text-2xl font-black">
-                    {money(result.costos.totalConIva)}
-                  </span>
+                    <span className="text-2xl font-black">
+                      {money(result.costos.totalConIva)}
+                    </span>
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {!canViewSalePrice && (
+                <div className="mt-5 rounded-xl border border-yellow-500/30 bg-yellow-500/10 px-4 py-4 text-yellow-100">
+                  <p className="text-sm font-bold uppercase">
+                    Vista sin precios de venta
+                  </p>
+
+                  <p className="mt-1 text-xs leading-5">
+                    Este rol no tiene permiso para ver precio final, costos,
+                    utilidad ni margen.
+                  </p>
+                </div>
+              )}
             </div>
 
-            <ValidationCard
-              title="Estado del precio"
-              value={result.validations.precio}
-            />
+            {canViewInternalCosts && (
+              <ValidationCard
+                title="Estado del precio"
+                value={result.validations.precio}
+              />
+            )}
 
-            <ValidationCard
-              title="Validación de materiales"
-              value={result.validations.material}
-            />
+            {!isGuest && (
+              <>
+                <ValidationCard
+                  title="Validación de materiales"
+                  value={result.validations.material}
+                />
 
-            <ValidationCard
-              title="Validación de servicios especiales"
-              value={result.validations.servicios}
-            />
+                <ValidationCard
+                  title="Validación de servicios especiales"
+                  value={result.validations.servicios}
+                />
 
-            <ValidationCard
-              title="Validación de impresión"
-              value={result.validations.impresion}
-            />
+                <ValidationCard
+                  title="Validación de impresión"
+                  value={result.validations.impresion}
+                />
+              </>
+            )}
 
             <div className="grid grid-cols-2 gap-3">
               <MiniMetric
@@ -571,75 +643,34 @@ export default function CajasLuzForm({
         </section>
       </div>
 
-      <section className="rounded-2xl border border-neutral-800 bg-neutral-900">
-        <SectionHeader title="Detalle de costos internos" />
+      {canViewProductionMaterials && (
+        <section className="rounded-2xl border border-neutral-800 bg-neutral-900">
+          <SectionHeader
+            title={
+              canViewProductPrices
+                ? "Detalle de costos internos"
+                : "Detalle de materiales para producción"
+            }
+          />
 
-        <div className="overflow-x-auto p-5">
-          <table className="w-full min-w-[900px] border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-neutral-700 bg-neutral-950 text-xs uppercase tracking-wider text-neutral-400">
-                <th className="px-3 py-3 text-left">Grupo</th>
-                <th className="px-3 py-3 text-left">Concepto</th>
-                <th className="px-3 py-3 text-left">SKU</th>
-                <th className="px-3 py-3 text-right">Cantidad</th>
-                <th className="px-3 py-3 text-left">Unidad</th>
-                <th className="px-3 py-3 text-right">Costo unitario</th>
-                <th className="px-3 py-3 text-right">Total</th>
-              </tr>
-            </thead>
+          <div className="overflow-x-auto p-5">
+            {canViewProductPrices ? (
+              <InternalCostTable groupedEntries={groupedEntries} />
+            ) : (
+              <ProductionMaterialTable groupedEntries={groupedEntries} />
+            )}
+          </div>
+        </section>
+      )}
 
-            <tbody>
-              {groupedEntries.map(([group, lines]) => (
-                <Fragment key={group}>
-                  <tr className="bg-neutral-800/60">
-                    <td
-                      colSpan={7}
-                      className="px-3 py-2 text-xs font-bold uppercase text-yellow-300"
-                    >
-                      {group}
-                    </td>
-                  </tr>
-
-                  {lines.map((line, index) => (
-                    <tr
-                      key={`${line.grupo}-${line.concepto}-${index}`}
-                      className="border-b border-neutral-800"
-                    >
-                      <td className="px-3 py-3 text-neutral-500">
-                        {line.grupo}
-                      </td>
-
-                      <td className="px-3 py-3 text-white">
-                        {line.concepto}
-                      </td>
-
-                      <td className="px-3 py-3 text-neutral-500">
-                        {line.sku || "—"}
-                      </td>
-
-                      <td className="px-3 py-3 text-right">
-                        {fixed(line.cantidad)}
-                      </td>
-
-                      <td className="px-3 py-3 text-neutral-400">
-                        {line.unidad}
-                      </td>
-
-                      <td className="px-3 py-3 text-right">
-                        {money(line.costoUnitario)}
-                      </td>
-
-                      <td className="px-3 py-3 text-right font-semibold">
-                        {money(line.total)}
-                      </td>
-                    </tr>
-                  ))}
-                </Fragment>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      {!canViewProductionMaterials && (
+        <section className="rounded-2xl border border-neutral-800 bg-neutral-900 p-5">
+          <div className="rounded-2xl border border-yellow-500/30 bg-yellow-500/10 p-4 text-sm font-semibold leading-6 text-yellow-100">
+            Tu rol no tiene permiso para ver materiales, SKUs, cantidades ni
+            precios internos.
+          </div>
+        </section>
+      )}
 
       <section className="rounded-2xl border border-neutral-800 bg-neutral-900">
         <SectionHeader title="Cotización para copiar" />
@@ -652,22 +683,35 @@ export default function CajasLuzForm({
           </div>
 
           <div className="mt-4 grid gap-3 md:grid-cols-4">
-            <MiniMetric
-              title="Precio S/IVA"
-              value={money(result.costos.precioSinIva)}
-            />
+            {canViewSalePrice && (
+              <>
+                <MiniMetric
+                  title="Precio S/IVA"
+                  value={money(result.costos.precioSinIva)}
+                />
 
-            <MiniMetric title="IVA" value={money(result.costos.iva)} />
+                <MiniMetric title="IVA" value={money(result.costos.iva)} />
 
-            <MiniMetric
-              title="Total C/IVA"
-              value={money(result.costos.totalConIva)}
-            />
+                <MiniMetric
+                  title="Total C/IVA"
+                  value={money(result.costos.totalConIva)}
+                />
+              </>
+            )}
 
-            <MiniMetric
-              title="Utilidad"
-              value={money(result.costos.utilidad)}
-            />
+            {canViewUtility && (
+              <MiniMetric
+                title="Utilidad"
+                value={money(result.costos.utilidad)}
+              />
+            )}
+
+            {!canViewSalePrice && (
+              <MiniMetric
+                title="Precios"
+                value="Ocultos para este rol"
+              />
+            )}
           </div>
 
           <div className="mt-5 rounded-2xl border border-neutral-800 bg-neutral-950 p-4">
@@ -713,6 +757,130 @@ export default function CajasLuzForm({
           </div>
         </div>
       </section>
+    </div>
+  );
+}
+
+function InternalCostTable({
+  groupedEntries,
+}: {
+  groupedEntries: Array<[string, ReturnType<typeof calculateCajaLuz>["partidas"]]>;
+}) {
+  return (
+    <table className="w-full min-w-[900px] border-collapse text-sm">
+      <thead>
+        <tr className="border-b border-neutral-700 bg-neutral-950 text-xs uppercase tracking-wider text-neutral-400">
+          <th className="px-3 py-3 text-left">Grupo</th>
+          <th className="px-3 py-3 text-left">Concepto</th>
+          <th className="px-3 py-3 text-left">SKU</th>
+          <th className="px-3 py-3 text-right">Cantidad</th>
+          <th className="px-3 py-3 text-left">Unidad</th>
+          <th className="px-3 py-3 text-right">Costo unitario</th>
+          <th className="px-3 py-3 text-right">Total</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {groupedEntries.map(([group, lines]) => (
+          <Fragment key={group}>
+            <tr className="bg-neutral-800/60">
+              <td
+                colSpan={7}
+                className="px-3 py-2 text-xs font-bold uppercase text-yellow-300"
+              >
+                {group}
+              </td>
+            </tr>
+
+            {lines.map((line, index) => (
+              <tr
+                key={`${line.grupo}-${line.concepto}-${index}`}
+                className="border-b border-neutral-800"
+              >
+                <td className="px-3 py-3 text-neutral-500">{line.grupo}</td>
+                <td className="px-3 py-3 text-white">{line.concepto}</td>
+                <td className="px-3 py-3 text-neutral-500">
+                  {line.sku || "—"}
+                </td>
+                <td className="px-3 py-3 text-right">
+                  {fixed(line.cantidad)}
+                </td>
+                <td className="px-3 py-3 text-neutral-400">{line.unidad}</td>
+                <td className="px-3 py-3 text-right">
+                  {money(line.costoUnitario)}
+                </td>
+                <td className="px-3 py-3 text-right font-semibold">
+                  {money(line.total)}
+                </td>
+              </tr>
+            ))}
+          </Fragment>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function ProductionMaterialTable({
+  groupedEntries,
+}: {
+  groupedEntries: Array<[string, ReturnType<typeof calculateCajaLuz>["partidas"]]>;
+}) {
+  return (
+    <table className="w-full min-w-[700px] border-collapse text-sm">
+      <thead>
+        <tr className="border-b border-neutral-700 bg-neutral-950 text-xs uppercase tracking-wider text-neutral-400">
+          <th className="px-3 py-3 text-left">Grupo</th>
+          <th className="px-3 py-3 text-left">Concepto</th>
+          <th className="px-3 py-3 text-left">SKU</th>
+          <th className="px-3 py-3 text-right">Cantidad</th>
+          <th className="px-3 py-3 text-left">Unidad</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {groupedEntries.map(([group, lines]) => (
+          <Fragment key={group}>
+            <tr className="bg-neutral-800/60">
+              <td
+                colSpan={5}
+                className="px-3 py-2 text-xs font-bold uppercase text-yellow-300"
+              >
+                {group}
+              </td>
+            </tr>
+
+            {lines.map((line, index) => (
+              <tr
+                key={`${line.grupo}-${line.concepto}-${index}`}
+                className="border-b border-neutral-800"
+              >
+                <td className="px-3 py-3 text-neutral-500">{line.grupo}</td>
+                <td className="px-3 py-3 text-white">{line.concepto}</td>
+                <td className="px-3 py-3 text-neutral-500">
+                  {line.sku || "—"}
+                </td>
+                <td className="px-3 py-3 text-right">
+                  {fixed(line.cantidad)}
+                </td>
+                <td className="px-3 py-3 text-neutral-400">{line.unidad}</td>
+              </tr>
+            ))}
+          </Fragment>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function PermissionNotice({ title, text }: { title: string; text: string }) {
+  return (
+    <div className="rounded-2xl border border-yellow-500/30 bg-yellow-500/10 p-4 text-yellow-100">
+      <p className="text-xs font-black uppercase tracking-[0.22em] text-yellow-300">
+        {title}
+      </p>
+
+      <p className="mt-2 text-sm leading-6">{text}</p>
     </div>
   );
 }

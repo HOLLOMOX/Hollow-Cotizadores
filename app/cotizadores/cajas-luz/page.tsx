@@ -89,6 +89,7 @@ export default async function CajasLuzPage() {
             initialRemaining={access.cotizador_remaining}
             consumeAction={consumeGuestCotizadorUse}
             saveAction={saveCajaLuzQuote}
+            userRole={access.role}
           />
         </div>
       </main>
@@ -112,7 +113,11 @@ export default async function CajasLuzPage() {
           </p>
         </div>
 
-        <CajasLuzForm costRows={rows} saveAction={saveCajaLuzQuote} />
+        <CajasLuzForm
+          costRows={rows}
+          saveAction={saveCajaLuzQuote}
+          userRole={access.role}
+        />
       </div>
     </main>
   );
