@@ -16,6 +16,7 @@ export default function GuestUsageGate({
   initialRemaining,
   consumeAction,
   saveAction,
+  userRole,
 }: {
   costRows: CostRow[];
   initialLimit: number | null;
@@ -23,6 +24,7 @@ export default function GuestUsageGate({
   initialRemaining: number | null;
   consumeAction: () => Promise<ConsumeCotizadorResponse>;
   saveAction: (payload: SaveQuotePayload) => Promise<SaveQuoteResponse>;
+  userRole: string;
 }) {
   const [activated, setActivated] = useState(false);
   const [used, setUsed] = useState(initialUsed);
@@ -69,12 +71,16 @@ export default function GuestUsageGate({
           </p>
 
           <p className="mt-2 text-xs text-yellow-200/80">
-            Si recargas la página o sales del cotizador, tendrás que activar un
-            nuevo uso.
+            La cuenta invitada no puede ver materiales, costos internos ni
+            precios de productos.
           </p>
         </div>
 
-        <CajasLuzForm costRows={costRows} saveAction={saveAction} />
+        <CajasLuzForm
+          costRows={costRows}
+          saveAction={saveAction}
+          userRole={userRole}
+        />
       </div>
     );
   }
