@@ -312,17 +312,23 @@ export default function CajasLuzForm({
 
               <NumberField
                 label="Andamios"
-                suffix="$"
+                suffix="servicios"
                 value={form.andamios}
                 onChange={(value) => updateField("andamios", value)}
               />
 
               <NumberField
                 label="Núm. de descolgadas"
-                suffix="pzas"
+                suffix="servicios"
                 value={form.numeroDescolgadas}
                 onChange={(value) => updateField("numeroDescolgadas", value)}
               />
+
+              <InfoBox>
+                Andamios y descolgadas se cobran desde catálogo de costos. La
+                altura puede aumentar automáticamente la mano de obra de
+                instalación.
+              </InfoBox>
 
               <NumberField
                 label="Servicio instalación extra"
@@ -707,10 +713,7 @@ export default function CajasLuzForm({
             )}
 
             {!canViewSalePrice && (
-              <MiniMetric
-                title="Precios"
-                value="Ocultos para este rol"
-              />
+              <MiniMetric title="Precios" value="Ocultos para este rol" />
             )}
           </div>
 
@@ -764,7 +767,9 @@ export default function CajasLuzForm({
 function InternalCostTable({
   groupedEntries,
 }: {
-  groupedEntries: Array<[string, ReturnType<typeof calculateCajaLuz>["partidas"]]>;
+  groupedEntries: Array<
+    [string, ReturnType<typeof calculateCajaLuz>["partidas"]]
+  >;
 }) {
   return (
     <table className="w-full min-w-[900px] border-collapse text-sm">
@@ -824,7 +829,9 @@ function InternalCostTable({
 function ProductionMaterialTable({
   groupedEntries,
 }: {
-  groupedEntries: Array<[string, ReturnType<typeof calculateCajaLuz>["partidas"]]>;
+  groupedEntries: Array<
+    [string, ReturnType<typeof calculateCajaLuz>["partidas"]]
+  >;
 }) {
   return (
     <table className="w-full min-w-[700px] border-collapse text-sm">
