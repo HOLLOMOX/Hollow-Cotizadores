@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { getCurrentUserProfile } from "@/utils/auth/permissions";
 
@@ -19,8 +20,15 @@ export default async function AppTopBar() {
     <header className="sticky top-0 z-50 border-b border-neutral-800 bg-neutral-950/95 px-4 py-3 text-white backdrop-blur sm:px-6 lg:px-8">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
         <Link href="/" className="group flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-yellow-500/40 bg-yellow-400 text-sm font-black text-neutral-950 shadow-lg shadow-yellow-950/20 transition group-hover:scale-105">
-            HM
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-yellow-500/40 bg-neutral-900 p-1.5 shadow-lg shadow-yellow-950/20 transition group-hover:scale-105 group-hover:border-yellow-400">
+            <Image
+              src="/void-warlock.svg"
+              alt="Hollow Mox"
+              width={44}
+              height={44}
+              priority
+              className="h-full w-full object-contain"
+            />
           </div>
 
           <div>
@@ -34,50 +42,61 @@ export default async function AppTopBar() {
           </div>
         </Link>
 
-        {isLogged && (
-          <nav className="flex flex-wrap items-center justify-end gap-2">
-            <Link
-              href="/"
-              className="rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-xs font-bold uppercase tracking-wide text-neutral-300 transition hover:border-yellow-400 hover:text-yellow-300"
-            >
-              Inicio
-            </Link>
+        <nav className="flex flex-wrap items-center justify-end gap-2">
+          <Link
+            href="/"
+            className="rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-xs font-bold uppercase tracking-wide text-neutral-300 transition hover:border-yellow-400 hover:text-yellow-300"
+          >
+            Inicio
+          </Link>
 
-            <Link
-              href="/cotizadores/cajas-luz"
-              className="rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-xs font-bold uppercase tracking-wide text-neutral-300 transition hover:border-yellow-400 hover:text-yellow-300"
-            >
-              Caja de luz
-            </Link>
-
-            {canViewCotizaciones && (
+          {isLogged && (
+            <>
               <Link
-                href="/cotizaciones"
+                href="/cotizadores/cajas-luz"
                 className="rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-xs font-bold uppercase tracking-wide text-neutral-300 transition hover:border-yellow-400 hover:text-yellow-300"
               >
-                Cotizaciones
+                Caja de luz
               </Link>
-            )}
 
-            {isAdmin && (
-              <Link
-                href="/admin"
-                className="rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-xs font-bold uppercase tracking-wide text-neutral-300 transition hover:border-yellow-400 hover:text-yellow-300"
-              >
-                Admin
-              </Link>
-            )}
+              {canViewCotizaciones && (
+                <Link
+                  href="/cotizaciones"
+                  className="rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-xs font-bold uppercase tracking-wide text-neutral-300 transition hover:border-yellow-400 hover:text-yellow-300"
+                >
+                  Cotizaciones
+                </Link>
+              )}
 
-            <form action="/logout" method="post">
-              <button
-                type="submit"
-                className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-black uppercase tracking-wide text-red-300 transition hover:border-red-400 hover:bg-red-500/20 hover:text-red-200"
-              >
-                Cerrar sesión
-              </button>
-            </form>
-          </nav>
-        )}
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  className="rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-xs font-bold uppercase tracking-wide text-neutral-300 transition hover:border-yellow-400 hover:text-yellow-300"
+                >
+                  Admin
+                </Link>
+              )}
+
+              <form action="/logout" method="post">
+                <button
+                  type="submit"
+                  className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-black uppercase tracking-wide text-red-300 transition hover:border-red-400 hover:bg-red-500/20 hover:text-red-200"
+                >
+                  Cerrar sesión
+                </button>
+              </form>
+            </>
+          )}
+
+          {!isLogged && (
+            <Link
+              href="/login"
+              className="rounded-xl bg-yellow-400 px-4 py-2 text-xs font-black uppercase tracking-wide text-neutral-950 transition hover:bg-yellow-300"
+            >
+              Iniciar sesión
+            </Link>
+          )}
+        </nav>
       </div>
     </header>
   );
