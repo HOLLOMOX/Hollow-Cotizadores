@@ -53,6 +53,10 @@ export default function CajasLuzForm({
   const canViewProductPrices = role === "admin" || role === "vendedor";
   const canViewUtility = role === "admin" || role === "vendedor";
 
+  const canEditMargin = role === "admin";
+  const canEditIva = role === "admin";
+  const canViewMarginInput = role === "admin" || role === "vendedor";
+
   const canViewProductionMaterials =
     role === "admin" || role === "vendedor" || role === "produccion";
 
@@ -618,21 +622,37 @@ export default function CajasLuzForm({
               </FieldGroup>
             )}
 
-            <FieldGroup title="Precio">
-              <NumberField
-                label="Margen"
-                suffix="%"
-                value={form.margen}
-                onChange={(value) => updateField("margen", value)}
-              />
+            {canViewMarginInput && (
+              <FieldGroup title="Precio">
+                <NumberField
+                  label={canEditMargin ? "Margen" : "Margen bloqueado"}
+                  suffix="%"
+                  value={form.margen}
+                  disabled={!canEditMargin}
+                  onChange={(value) => {
+                    if (!canEditMargin) return;
+                    updateField("margen", value);
+                  }}
+                />
 
-              <NumberField
-                label="IVA"
-                suffix="%"
-                value={form.ivaPorcentaje}
-                onChange={(value) => updateField("ivaPorcentaje", value)}
-              />
-            </FieldGroup>
+                <InfoBox>
+                  {canEditMargin
+                    ? "Como administrador puedes modificar el margen de utilidad."
+                    : "El margen está bloqueado. Solo un administrador puede modificarlo."}
+                </InfoBox>
+
+                <NumberField
+                  label={canEditIva ? "IVA" : "IVA bloqueado"}
+                  suffix="%"
+                  value={form.ivaPorcentaje}
+                  disabled={!canEditIva}
+                  onChange={(value) => {
+                    if (!canEditIva) return;
+                    updateField("ivaPorcentaje", value);
+                  }}
+                />
+              </FieldGroup>
+            )}
 
             <FieldGroup title="Observaciones">
               <textarea
@@ -1148,27 +1168,46 @@ function NumberField({
   suffix,
   value,
   onChange,
+  disabled = false,
 }: {
   label: string;
   suffix?: string;
   value: string;
   onChange: (value: string) => void;
+  disabled?: boolean;
 }) {
   return (
     <label className="grid gap-1 text-sm">
       <span className="text-neutral-400">{label}</span>
 
-      <div className="flex overflow-hidden rounded-xl border border-neutral-700 bg-yellow-50 focus-within:border-yellow-400">
+      <div
+        className={`flex overflow-hidden rounded-xl border ${
+          disabled
+            ? "border-neutral-800 bg-neutral-800 opacity-70"
+            : "border-neutral-700 bg-yellow-50 focus-within:border-yellow-400"
+        }`}
+      >
         <input
           value={value}
           type="number"
           step="0.01"
+          disabled={disabled}
           onChange={(event) => onChange(event.target.value)}
-          className="min-w-0 flex-1 bg-transparent px-3 py-2 text-sm font-semibold text-neutral-950 outline-none"
+          className={`min-w-0 flex-1 px-3 py-2 text-sm font-semibold outline-none ${
+            disabled
+              ? "cursor-not-allowed bg-neutral-800 text-neutral-400"
+              : "bg-transparent text-neutral-950"
+          }`}
         />
 
         {suffix && (
-          <span className="flex items-center bg-yellow-100 px-3 text-xs font-bold text-neutral-700">
+          <span
+            className={`flex items-center px-3 text-xs font-bold ${
+              disabled
+                ? "bg-neutral-900 text-neutral-500"
+                : "bg-yellow-100 text-neutral-700"
+            }`}
+          >
             {suffix}
           </span>
         )}
