@@ -179,9 +179,13 @@ function getMedidasClienteText(anchoM: number, altoM: number) {
   const anchoCm = Math.round(anchoM * 100);
   const altoCm = Math.round(altoM * 100);
 
-  return `${anchoM.toFixed(2)} x ${altoM.toFixed(
-    2
-  )} m (${anchoCm} x ${altoCm} cm)`;
+  const ambasMedidasMenoresAUnMetro = anchoM < 1 && altoM < 1;
+
+  if (ambasMedidasMenoresAUnMetro) {
+    return `${anchoCm} X ${altoCm} CM`;
+  }
+
+  return `${anchoM.toFixed(2)} X ${altoM.toFixed(2)} M`;
 }
 
 function fuentePorConsumo(consumo: number): FuenteResult {
@@ -1318,7 +1322,7 @@ export function calculateCajaLuz(
     ]
       .filter(Boolean)
       .join(" ")
-  );
+  ).toUpperCase();
 
   return {
     medidas: {
