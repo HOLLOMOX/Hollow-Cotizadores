@@ -196,7 +196,7 @@ export default function CajasLuzForm({
   >;
 
   return (
-    <div className="space-y-6">
+    <div className="w-full min-w-0 space-y-6">
       <HeroHeader
         role={role}
         cliente={form.cliente}
@@ -219,14 +219,14 @@ export default function CajasLuzForm({
         />
       )}
 
-      <div className="grid gap-6 xl:grid-cols-12">
-        <div className="space-y-6 xl:col-span-8">
+      <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_400px] 2xl:grid-cols-[minmax(0,1fr)_430px]">
+        <div className="min-w-0 space-y-6">
           <PanelCard
             eyebrow="Configuración"
-            title="Datos principales del proyecto"
-            description="Captura cliente, medidas, tipo de caja, carátula e iluminación."
+            title="Datos principales"
+            description="Captura cliente, proyecto, medidas y tipo de caja."
           >
-            <div className="grid gap-5 lg:grid-cols-2">
+            <ResponsiveGrid>
               <FieldBlock title="Datos generales">
                 <TextField
                   label="Cliente"
@@ -247,7 +247,7 @@ export default function CajasLuzForm({
                 />
               </FieldBlock>
 
-              <FieldBlock title="Medidas y tipo de caja">
+              <FieldBlock title="Medidas">
                 <SelectField
                   label="Tipo de caja"
                   value={form.tipoCaja}
@@ -257,7 +257,7 @@ export default function CajasLuzForm({
                   }
                 />
 
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid min-w-0 gap-3 sm:grid-cols-2">
                   <NumberField
                     label="Cantidad"
                     suffix="pzas"
@@ -273,7 +273,7 @@ export default function CajasLuzForm({
                   />
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid min-w-0 gap-3 sm:grid-cols-2">
                   <NumberField
                     label="Ancho"
                     suffix="m"
@@ -306,15 +306,15 @@ export default function CajasLuzForm({
                   />
                 )}
               </FieldBlock>
-            </div>
+            </ResponsiveGrid>
           </PanelCard>
 
           <PanelCard
             eyebrow="Materiales"
             title="Carátula e iluminación"
-            description="Selecciona el acabado frontal y el sistema de iluminación."
+            description="Selecciona la presentación frontal y el sistema de luz."
           >
-            <div className="grid gap-5 lg:grid-cols-2">
+            <ResponsiveGrid>
               <FieldBlock title="Carátula">
                 <SelectField
                   label="Tipo de carátula"
@@ -352,7 +352,7 @@ export default function CajasLuzForm({
 
                 {form.iluminacion === "Lámparas LED" && (
                   <>
-                    <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="grid min-w-0 gap-3 sm:grid-cols-2">
                       <NumberField
                         label="Separación"
                         suffix="m"
@@ -431,15 +431,15 @@ export default function CajasLuzForm({
                   </>
                 )}
               </FieldBlock>
-            </div>
+            </ResponsiveGrid>
           </PanelCard>
 
           <PanelCard
             eyebrow="Servicios"
             title="Instalación, traslado y diseño"
-            description="Define instalación, zona de traslado y si el proyecto requiere diseño gráfico."
+            description="Define la condición de instalación, zona de traslado y tiempo de diseño."
           >
-            <div className="grid gap-5 lg:grid-cols-3">
+            <div className="grid min-w-0 gap-5 md:grid-cols-2 2xl:grid-cols-3">
               <FieldBlock title="Instalación">
                 <SelectField
                   label="Incluye instalación"
@@ -461,8 +461,8 @@ export default function CajasLuzForm({
                 />
 
                 <InfoBox>
-                  La condición seleccionada puede aumentar automáticamente la
-                  mano de obra de instalación.
+                  La condición puede aumentar automáticamente la mano de obra de
+                  instalación.
                 </InfoBox>
               </FieldBlock>
 
@@ -500,19 +500,14 @@ export default function CajasLuzForm({
                           selectedTransportZone.label}
                       </strong>
                       <br />
-                      Trabajo: {money(selectedTransportZone.work_cost)} ·
+                      Trabajo: {money(selectedTransportZone.work_cost)}
+                      <br />
                       Entrega: {money(selectedTransportZone.delivery_cost)}
                       <br />
-                      Costo aplicado: {money(selectedTransportCost)}
-                      {selectedTransportZone.coverage_text && (
-                        <>
-                          <br />
-                          Cobertura: {selectedTransportZone.coverage_text}
-                        </>
-                      )}
+                      Aplicado: {money(selectedTransportCost)}
                     </>
                   ) : (
-                    "No se encontró información de esta zona de traslado."
+                    "No se encontró información de esta zona."
                   )}
                 </InfoBox>
               </FieldBlock>
@@ -543,16 +538,10 @@ export default function CajasLuzForm({
                       <br />
                       Minutos: {selectedDesignOption.minutes}
                       <br />
-                      Costo aplicado: {money(selectedDesignCost)}
-                      {selectedDesignOption.price <= 0 && (
-                        <>
-                          <br />
-                          No se agregará costo de diseño.
-                        </>
-                      )}
+                      Aplicado: {money(selectedDesignCost)}
                     </>
                   ) : (
-                    "No se encontró información de esta opción de diseño."
+                    "No se encontró información de esta opción."
                   )}
                 </InfoBox>
               </FieldBlock>
@@ -564,7 +553,7 @@ export default function CajasLuzForm({
             title="Adicionales, personal y tiempos"
             description="Agrega servicios especiales, andamios, descolgadas y horas de trabajo."
           >
-            <div className="grid gap-5 lg:grid-cols-2">
+            <ResponsiveGrid>
               <FieldBlock title="Adicionales">
                 <NumberField
                   label="Material extra"
@@ -573,7 +562,7 @@ export default function CajasLuzForm({
                   onChange={(value) => updateField("materialExtra", value)}
                 />
 
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid min-w-0 gap-3 sm:grid-cols-2">
                   <NumberField
                     label="Andamios"
                     suffix="servicios"
@@ -592,7 +581,7 @@ export default function CajasLuzForm({
                 </div>
 
                 <NumberField
-                  label="Servicio instalación extra"
+                  label="Instalación extra"
                   suffix="$"
                   value={form.instalacion}
                   onChange={(value) => updateField("instalacion", value)}
@@ -606,7 +595,7 @@ export default function CajasLuzForm({
                 />
               </FieldBlock>
 
-              <FieldBlock title="Personas y tiempos">
+              <FieldBlock title="Personal y tiempos">
                 <CheckboxField
                   label="Tiempos automáticos"
                   checked={form.usarTiemposAutomaticos}
@@ -615,7 +604,7 @@ export default function CajasLuzForm({
                   }
                 />
 
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid min-w-0 gap-3 sm:grid-cols-2">
                   <NumberField
                     label="Personas fabricación"
                     suffix="personas"
@@ -636,7 +625,7 @@ export default function CajasLuzForm({
                 </div>
 
                 {!form.usarTiemposAutomaticos && (
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="grid min-w-0 gap-3 sm:grid-cols-2">
                     <NumberField
                       label="Horas fabricación"
                       suffix="h"
@@ -658,19 +647,18 @@ export default function CajasLuzForm({
                 )}
 
                 <InfoBox>
-                  La mano de obra se calcula por hora-hombre: horas × personas ×
-                  costo por hora desde catálogo.
+                  La mano de obra se calcula por hora-hombre.
                 </InfoBox>
               </FieldBlock>
-            </div>
+            </ResponsiveGrid>
           </PanelCard>
 
           <PanelCard
             eyebrow="Control"
             title="Precio y observaciones"
-            description="El margen solo puede modificarlo el administrador."
+            description="El margen y el IVA solo pueden modificarse desde una cuenta admin."
           >
-            <div className="grid gap-5 lg:grid-cols-2">
+            <ResponsiveGrid>
               {canViewMarginInput && (
                 <FieldBlock title="Margen e IVA">
                   <NumberField
@@ -698,7 +686,7 @@ export default function CajasLuzForm({
                   <InfoBox>
                     {canEditMargin
                       ? "Como administrador puedes modificar margen e IVA."
-                      : "Margen e IVA bloqueados. Solo un administrador puede modificarlos."}
+                      : "Margen e IVA bloqueados para este rol."}
                   </InfoBox>
                 </FieldBlock>
               )}
@@ -709,16 +697,16 @@ export default function CajasLuzForm({
                   onChange={(event) =>
                     updateField("observaciones", event.target.value)
                   }
-                  className="min-h-32 w-full rounded-2xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-neutral-600 focus:border-yellow-400"
+                  className="min-h-32 w-full min-w-0 resize-y rounded-2xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-neutral-600 focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20"
                   placeholder="Texto libre para aclaraciones internas o de cliente..."
                 />
               </FieldBlock>
-            </div>
+            </ResponsiveGrid>
           </PanelCard>
         </div>
 
-        <aside className="xl:col-span-4">
-          <div className="sticky top-6 space-y-5">
+        <aside className="min-w-0">
+          <div className="space-y-5 xl:sticky xl:top-6">
             <SummaryCard
               result={result}
               canViewSalePrice={canViewSalePrice}
@@ -750,12 +738,10 @@ export default function CajasLuzForm({
       </div>
 
       {canViewProductionMaterials && (
-        <section className="rounded-3xl border border-neutral-800 bg-neutral-900 shadow-2xl shadow-black/20">
+        <section className="min-w-0 rounded-3xl border border-neutral-800 bg-neutral-900 shadow-2xl shadow-black/20">
           <div className="border-b border-neutral-800 px-5 py-4">
             <p className="text-xs font-black uppercase tracking-[0.25em] text-yellow-400">
-              {canViewProductPrices
-                ? "Costos internos"
-                : "Producción"}
+              {canViewProductPrices ? "Costos internos" : "Producción"}
             </p>
 
             <h3 className="mt-1 text-lg font-black text-white">
@@ -765,7 +751,7 @@ export default function CajasLuzForm({
             </h3>
           </div>
 
-          <div className="overflow-x-auto p-5">
+          <div className="w-full overflow-x-auto p-4 sm:p-5">
             {canViewProductPrices ? (
               <InternalCostTable groupedEntries={groupedEntries} />
             ) : (
@@ -787,6 +773,10 @@ export default function CajasLuzForm({
   );
 }
 
+function ResponsiveGrid({ children }: { children: ReactNode }) {
+  return <div className="grid min-w-0 gap-5 lg:grid-cols-2">{children}</div>;
+}
+
 function HeroHeader({
   role,
   cliente,
@@ -801,40 +791,39 @@ function HeroHeader({
   canViewSalePrice: boolean;
 }) {
   return (
-    <div className="overflow-hidden rounded-3xl border border-neutral-800 bg-gradient-to-br from-neutral-900 via-neutral-900 to-yellow-500/10 shadow-2xl shadow-black/20">
-      <div className="grid gap-6 p-6 lg:grid-cols-[1fr_auto] lg:items-center">
-        <div>
+    <div className="min-w-0 overflow-hidden rounded-3xl border border-neutral-800 bg-gradient-to-br from-neutral-900 via-neutral-900 to-yellow-500/10 shadow-2xl shadow-black/20">
+      <div className="grid min-w-0 gap-5 p-4 sm:p-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+        <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-yellow-400/40 bg-yellow-400/10 px-3 py-1 text-xs font-black uppercase tracking-[0.2em] text-yellow-300">
+            <span className="rounded-full border border-yellow-400/40 bg-yellow-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-yellow-300 sm:text-xs">
               Hollow Cotizadores
             </span>
 
-            <span className="rounded-full border border-neutral-700 bg-neutral-950 px-3 py-1 text-xs font-bold uppercase text-neutral-300">
+            <span className="rounded-full border border-neutral-700 bg-neutral-950 px-3 py-1 text-[10px] font-bold uppercase text-neutral-300 sm:text-xs">
               Rol: {role}
             </span>
           </div>
 
-          <h1 className="mt-4 text-2xl font-black tracking-tight text-white md:text-4xl">
+          <h1 className="mt-4 text-2xl font-black tracking-tight text-white sm:text-3xl lg:text-4xl">
             Cotizador de cajas de luz
           </h1>
 
           <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-400">
-            Captura técnica, costos internos, instalación, traslado y texto
-            listo para enviar al cliente.
+            Configuración técnica, cálculo comercial y texto listo para cliente.
           </p>
 
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <div className="mt-5 grid min-w-0 gap-3 sm:grid-cols-2">
             <HeroMini label="Cliente" value={cliente || "Sin cliente"} />
             <HeroMini label="Proyecto" value={proyecto || "Sin proyecto"} />
           </div>
         </div>
 
-        <div className="rounded-3xl border border-neutral-800 bg-neutral-950 p-5 text-center">
+        <div className="w-full rounded-3xl border border-neutral-800 bg-neutral-950 p-4 text-left sm:p-5 lg:w-64 lg:text-center">
           <p className="text-xs font-black uppercase tracking-[0.2em] text-neutral-500">
             Total estimado
           </p>
 
-          <p className="mt-2 text-3xl font-black text-white">
+          <p className="mt-2 break-words text-2xl font-black text-white sm:text-3xl">
             {canViewSalePrice ? money(total) : "Oculto"}
           </p>
 
@@ -849,10 +838,11 @@ function HeroHeader({
 
 function HeroMini({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-neutral-800 bg-neutral-950/70 px-4 py-3">
+    <div className="min-w-0 rounded-2xl border border-neutral-800 bg-neutral-950/70 px-4 py-3">
       <p className="text-xs uppercase tracking-wide text-neutral-500">
         {label}
       </p>
+
       <p className="mt-1 truncate text-sm font-bold text-white">{value}</p>
     </div>
   );
@@ -870,32 +860,34 @@ function PanelCard({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-3xl border border-neutral-800 bg-neutral-900 shadow-2xl shadow-black/20">
-      <div className="border-b border-neutral-800 px-5 py-4">
-        <p className="text-xs font-black uppercase tracking-[0.24em] text-yellow-400">
+    <section className="min-w-0 rounded-3xl border border-neutral-800 bg-neutral-900 shadow-2xl shadow-black/20">
+      <div className="border-b border-neutral-800 px-4 py-4 sm:px-5">
+        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-yellow-400 sm:text-xs">
           {eyebrow}
         </p>
 
-        <h2 className="mt-1 text-xl font-black text-white">{title}</h2>
+        <h2 className="mt-1 text-lg font-black text-white sm:text-xl">
+          {title}
+        </h2>
 
         <p className="mt-1 text-sm leading-6 text-neutral-500">
           {description}
         </p>
       </div>
 
-      <div className="p-5">{children}</div>
+      <div className="p-4 sm:p-5">{children}</div>
     </section>
   );
 }
 
 function FieldBlock({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="rounded-3xl border border-neutral-800 bg-neutral-950 p-4">
+    <div className="min-w-0 rounded-3xl border border-neutral-800 bg-neutral-950 p-4">
       <h3 className="mb-4 text-xs font-black uppercase tracking-[0.18em] text-yellow-400">
         {title}
       </h3>
 
-      <div className="grid gap-3">{children}</div>
+      <div className="grid min-w-0 gap-3">{children}</div>
     </div>
   );
 }
@@ -912,7 +904,7 @@ function SummaryCard({
   canViewUtility: boolean;
 }) {
   return (
-    <div className="rounded-3xl border border-neutral-800 bg-neutral-900 p-5 shadow-2xl shadow-black/20">
+    <div className="min-w-0 rounded-3xl border border-neutral-800 bg-neutral-900 p-4 shadow-2xl shadow-black/20 sm:p-5">
       <p className="text-xs font-black uppercase tracking-[0.22em] text-yellow-400">
         Resumen
       </p>
@@ -933,12 +925,12 @@ function SummaryCard({
         />
 
         <ResultRow
-          label="Horas-hombre fabricación"
+          label="Horas fab."
           value={`${result.tiempos.horasHombreFabricacion} h`}
         />
 
         <ResultRow
-          label="Horas-hombre instalación"
+          label="Horas inst."
           value={`${result.tiempos.horasHombreInstalacion} h`}
         />
 
@@ -968,7 +960,7 @@ function SummaryCard({
             />
 
             <ResultRow
-              label="Margen interno"
+              label="Margen"
               value={`${fixed(result.costos.margenPorcentaje)}%`}
             />
           </>
@@ -976,12 +968,12 @@ function SummaryCard({
       </div>
 
       {canViewSalePrice ? (
-        <div className="mt-5 rounded-3xl bg-yellow-400 p-5 text-neutral-950">
+        <div className="mt-5 rounded-3xl bg-yellow-400 p-4 text-neutral-950 sm:p-5">
           <p className="text-xs font-black uppercase tracking-[0.2em]">
             Total con IVA
           </p>
 
-          <p className="mt-2 text-3xl font-black">
+          <p className="mt-2 break-words text-2xl font-black sm:text-3xl">
             {money(result.costos.totalConIva)}
           </p>
         </div>
@@ -1006,7 +998,7 @@ function ValidationSummary({
   result: ReturnType<typeof calculateCajaLuz>;
 }) {
   return (
-    <div className="rounded-3xl border border-neutral-800 bg-neutral-900 p-5">
+    <div className="rounded-3xl border border-neutral-800 bg-neutral-900 p-4 sm:p-5">
       <p className="text-xs font-black uppercase tracking-[0.22em] text-yellow-400">
         Validaciones
       </p>
@@ -1044,7 +1036,7 @@ function QuoteCopyCard({
   lastQuoteNumber: string;
 }) {
   return (
-    <div className="rounded-3xl border border-neutral-800 bg-neutral-900 p-5">
+    <div className="min-w-0 rounded-3xl border border-neutral-800 bg-neutral-900 p-4 sm:p-5">
       <p className="text-xs font-black uppercase tracking-[0.22em] text-yellow-400">
         Texto para cliente
       </p>
@@ -1053,36 +1045,36 @@ function QuoteCopyCard({
         Cotización para copiar
       </h3>
 
-      <div className="mt-4 rounded-3xl border border-neutral-800 bg-neutral-950 p-4">
-        <p className="whitespace-pre-wrap text-sm leading-7 text-neutral-200">
+      <div className="mt-4 max-h-72 overflow-y-auto rounded-3xl border border-neutral-800 bg-neutral-950 p-4">
+        <p className="whitespace-pre-wrap break-words text-sm leading-7 text-neutral-200">
           {text}
         </p>
       </div>
 
-      <div className="mt-4 grid gap-3">
+      <div className="mt-4 grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
         <button
           type="button"
           onClick={onCopy}
-          className="rounded-2xl bg-yellow-400 px-5 py-3 text-sm font-black uppercase tracking-wide text-neutral-950 transition hover:bg-yellow-300"
+          className="rounded-2xl bg-yellow-400 px-4 py-3 text-sm font-black uppercase tracking-wide text-neutral-950 transition hover:bg-yellow-300"
         >
-          Copiar texto
+          Copiar
         </button>
 
         <button
           type="button"
           onClick={onSave}
           disabled={isSaving}
-          className="rounded-2xl border border-neutral-700 bg-neutral-950 px-5 py-3 text-sm font-black uppercase tracking-wide text-neutral-200 transition hover:border-yellow-400 hover:text-yellow-300 disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-2xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-sm font-black uppercase tracking-wide text-neutral-200 transition hover:border-yellow-400 hover:text-yellow-300 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isSaving ? "Guardando..." : "Guardar cotización"}
+          {isSaving ? "Guardando..." : "Guardar"}
         </button>
 
         <button
           type="button"
           onClick={onReset}
-          className="rounded-2xl border border-red-500/30 bg-red-500/10 px-5 py-3 text-sm font-black uppercase tracking-wide text-red-300 transition hover:border-red-400 hover:bg-red-500/20"
+          className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-black uppercase tracking-wide text-red-300 transition hover:border-red-400 hover:bg-red-500/20"
         >
-          Limpiar formulario
+          Limpiar
         </button>
       </div>
 
@@ -1113,14 +1105,14 @@ function TechnicalSummary({
   result: ReturnType<typeof calculateCajaLuz>;
 }) {
   return (
-    <div className="rounded-3xl border border-neutral-800 bg-neutral-900 p-5">
+    <div className="rounded-3xl border border-neutral-800 bg-neutral-900 p-4 sm:p-5">
       <p className="text-xs font-black uppercase tracking-[0.22em] text-yellow-400">
         Técnico
       </p>
 
       <div className="mt-4 grid grid-cols-2 gap-3">
         <MiniMetric
-          title="Área frente"
+          title="Área"
           value={`${fixed(result.medidas.areaFrenteM2)} m²`}
         />
 
@@ -1140,7 +1132,7 @@ function TechnicalSummary({
         />
 
         <MiniMetric
-          title="Iluminación"
+          title="Luz"
           value={`${result.iluminacion.cantidad} ${result.iluminacion.unidad}`}
         />
 
@@ -1323,13 +1315,13 @@ function TextField({
   onChange: (value: string) => void;
 }) {
   return (
-    <label className="grid gap-1 text-sm">
+    <label className="grid min-w-0 gap-1 text-sm">
       <span className="text-neutral-400">{label}</span>
 
       <input
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="rounded-2xl border border-neutral-700 bg-yellow-50 px-4 py-3 text-sm font-semibold text-neutral-950 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20"
+        className="w-full min-w-0 rounded-2xl border border-neutral-700 bg-yellow-50 px-4 py-3 text-sm font-semibold text-neutral-950 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20"
       />
     </label>
   );
@@ -1349,11 +1341,11 @@ function NumberField({
   disabled?: boolean;
 }) {
   return (
-    <label className="grid gap-1 text-sm">
+    <label className="grid min-w-0 gap-1 text-sm">
       <span className="text-neutral-400">{label}</span>
 
       <div
-        className={`flex overflow-hidden rounded-2xl border transition ${
+        className={`flex min-w-0 overflow-hidden rounded-2xl border transition ${
           disabled
             ? "border-neutral-800 bg-neutral-800 opacity-70"
             : "border-neutral-700 bg-yellow-50 focus-within:border-yellow-400 focus-within:ring-2 focus-within:ring-yellow-400/20"
@@ -1374,7 +1366,7 @@ function NumberField({
 
         {suffix && (
           <span
-            className={`flex items-center px-3 text-xs font-bold ${
+            className={`flex shrink-0 items-center px-3 text-xs font-bold ${
               disabled
                 ? "bg-neutral-900 text-neutral-500"
                 : "bg-yellow-100 text-neutral-700"
@@ -1402,13 +1394,13 @@ function SelectField({
   getOptionLabel?: (value: string) => string;
 }) {
   return (
-    <label className="grid gap-1 text-sm">
+    <label className="grid min-w-0 gap-1 text-sm">
       <span className="text-neutral-400">{label}</span>
 
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="rounded-2xl border border-neutral-700 bg-yellow-50 px-4 py-3 text-sm font-semibold text-neutral-950 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20"
+        className="w-full min-w-0 rounded-2xl border border-neutral-700 bg-yellow-50 px-4 py-3 text-sm font-semibold text-neutral-950 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20"
       >
         {options.map((option) => (
           <option key={option} value={option}>
@@ -1430,22 +1422,22 @@ function CheckboxField({
   onChange: (value: boolean) => void;
 }) {
   return (
-    <label className="flex items-center gap-3 rounded-2xl border border-neutral-700 bg-neutral-900 px-4 py-3 text-sm text-neutral-200 transition hover:border-neutral-600">
+    <label className="flex min-w-0 items-center gap-3 rounded-2xl border border-neutral-700 bg-neutral-900 px-4 py-3 text-sm text-neutral-200 transition hover:border-neutral-600">
       <input
         type="checkbox"
         checked={checked}
         onChange={(event) => onChange(event.target.checked)}
-        className="h-4 w-4"
+        className="h-4 w-4 shrink-0"
       />
 
-      {label}
+      <span className="min-w-0">{label}</span>
     </label>
   );
 }
 
 function InfoBox({ children }: { children: ReactNode }) {
   return (
-    <div className="rounded-2xl border border-yellow-500/30 bg-yellow-500/10 p-3 text-xs italic leading-5 text-yellow-100">
+    <div className="min-w-0 rounded-2xl border border-yellow-500/30 bg-yellow-500/10 p-3 text-xs italic leading-5 text-yellow-100">
       {children}
     </div>
   );
@@ -1453,18 +1445,20 @@ function InfoBox({ children }: { children: ReactNode }) {
 
 function ResultRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-neutral-800 pb-2">
-      <span className="text-sm text-neutral-400">{label}</span>
-      <span className="text-sm font-bold text-white">{value}</span>
+    <div className="flex min-w-0 items-center justify-between gap-4 border-b border-neutral-800 pb-2">
+      <span className="min-w-0 text-sm text-neutral-400">{label}</span>
+      <span className="shrink-0 text-right text-sm font-bold text-white">
+        {value}
+      </span>
     </div>
   );
 }
 
 function MiniMetric({ title, value }: { title: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-neutral-800 bg-neutral-950 p-4">
+    <div className="min-w-0 rounded-2xl border border-neutral-800 bg-neutral-950 p-3 sm:p-4">
       <p className="text-xs text-neutral-500">{title}</p>
-      <p className="mt-1 text-sm font-bold text-white">{value}</p>
+      <p className="mt-1 break-words text-sm font-bold text-white">{value}</p>
     </div>
   );
 }
