@@ -37,6 +37,19 @@ export type InstallationCondition = {
   notes?: string | null;
 };
 
+export type TransportZone = {
+  code: string;
+  label: string;
+  display_name: string | null;
+  coverage_text: string | null;
+  work_cost: number;
+  delivery_cost: number;
+  delivery_discount_percent: number;
+  active?: boolean;
+  sort_order?: number;
+  notes?: string | null;
+};
+
 export type FormState = {
   cliente: string;
   vendedor: string;
@@ -57,6 +70,7 @@ export type FormState = {
   incluyeInstalacion: "SI" | "NO";
   alturaCondicion: string;
   traslado: string;
+  trasladoTipo: "TRABAJO" | "ENTREGA";
   disenoGrafico: string;
 
   personasFabricacion: string;

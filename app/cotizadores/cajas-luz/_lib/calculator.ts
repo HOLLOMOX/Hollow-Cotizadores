@@ -4,6 +4,7 @@ import type {
   InstallationCondition,
   MaterialLine,
   QuoteResult,
+  TransportZone,
 } from "./types";
 import {
   MODULOS_POR_TIRA,
@@ -73,6 +74,30 @@ function getInstallationRuleFromCatalog({
   }
 
   return getAlturaInstalacionRule(alturaCondicion);
+}
+
+function getTransportZoneFromCatalog({
+  traslado,
+  transportZones,
+}: {
+  traslado: string;
+  transportZones: TransportZone[];
+}) {
+  const normalizedSelected = normalizeCondition(traslado);
+
+  const matched = transportZones.find((zone) => {
+    const normalizedCode = normalizeCondition(zone.code);
+    const normalizedLabel = normalizeCondition(zone.label);
+    const normalizedDisplayName = normalizeCondition(zone.display_name ?? "");
+
+    return (
+      normalizedCode === normalizedSelected ||
+      normalizedLabel === normalizedSelected ||
+      normalizedDisplayName === normalizedSelected
+    );
+  });
+
+  return matched ?? null;
 }
 
 function fuentePorConsumo(consumo: number): FuenteResult {
@@ -551,7 +576,8 @@ function addSoportesInstalacionLines({
     form.tipoCaja === "Doble vista";
 
   if (esAzotea || esTecho || esPared || esEspecial) {
-    const anguloSku = esAzotea || esTecho ? "ANGULO_ACERO_1" : "ANGULO_ACERO_1_1_2";
+    const anguloSku =
+      esAzotea || esTecho ? "ANGULO_ACERO_1" : "ANGULO_ACERO_1_1_2";
 
     const anguloLabel =
       esAzotea || esTecho
@@ -689,7 +715,8 @@ function getInstallationHours({
 export function calculateCajaLuz(
   form: FormState,
   costMap: Map<string, number>,
-  installationConditions: InstallationCondition[] = []
+  installationConditions: InstallationCondition[] = [],
+  transportZones: TransportZone[] = []
 ): QuoteResult {
   const anchoM = toNumber(form.anchoM);
   const altoM = toNumber(form.altoM);
@@ -746,6 +773,23 @@ export function calculateCajaLuz(
     alturaCondicion: form.alturaCondicion,
     installationConditions,
   });
+
+  const selectedTransportZone = getTransportZoneFromCatalog({
+    traslado: form.traslado,
+    transportZones,
+  });
+
+  const trasladoTipo = form.trasladoTipo ?? "TRABAJO";
+
+  const trasladoCosto =
+    trasladoTipo === "ENTREGA"
+      ? selectedTransportZone?.delivery_cost ?? 0
+      : selectedTransportZone?.work_cost ?? 0;
+
+  const trasladoLabel =
+    selectedTransportZone?.display_name ||
+    selectedTransportZone?.label ||
+    form.traslado;
 
   const lines: MaterialLine[] = [];
 
@@ -1051,6 +1095,18 @@ export function calculateCajaLuz(
     });
   }
 
+  addLine({
+    lines,
+    grupo: "Traslado",
+    concepto: `Traslado ${trasladoTipo.toLowerCase()} — ${trasladoLabel}`,
+    sku: selectedTransportZone?.code
+      ? `TRASLADO_${selectedTransportZone.code}`
+      : "TRASLADO_MANUAL",
+    cantidad: 1,
+    unidad: "SERVICIO",
+    costoUnitario: trasladoCosto,
+  });
+
   if (form.incluyeInstalacion === "SI" && toNumber(form.instalacion) > 0) {
     addLine({
       lines,
@@ -1123,7 +1179,7 @@ export function calculateCajaLuz(
     form.incluyeInstalacion === "SI"
       ? `INCLUYE INSTALACIÓN ${form.alturaCondicion.toUpperCase()}.`
       : "NO INCLUYE INSTALACIÓN.",
-    `TRASLADO: ${form.traslado.toUpperCase()}.`,
+    `TRASLADO: ${trasladoLabel.toUpperCase()} (${trasladoTipo}).`,
     `DISEÑO: ${form.disenoGrafico.toUpperCase()}.`,
     form.observaciones ? `OBSERVACIONES: ${form.observaciones}` : "",
   ]

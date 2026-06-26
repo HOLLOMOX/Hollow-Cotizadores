@@ -1,6 +1,10 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
-import type { CostRow, InstallationCondition } from "./_lib/types";
+import type {
+  CostRow,
+  InstallationCondition,
+  TransportZone,
+} from "./_lib/types";
 import CajasLuzForm from "./CajasLuzForm";
 import GuestUsageGate from "./GuestUsageGate";
 import { consumeGuestCotizadorUse, saveCajaLuzQuote } from "./actions";
@@ -26,6 +30,19 @@ type InstallationConditionRow = {
   notes: string | null;
 };
 
+type TransportZoneRow = {
+  code: string;
+  label: string;
+  display_name: string | null;
+  coverage_text: string | null;
+  work_cost: number | string;
+  delivery_cost: number | string;
+  delivery_discount_percent: number | string;
+  active: boolean;
+  sort_order: number;
+  notes: string | null;
+};
+
 const FALLBACK_INSTALLATION_CONDITIONS: InstallationCondition[] = [
   {
     code: "NIVEL_PISO_BAJA_ALTURA",
@@ -33,7 +50,6 @@ const FALLBACK_INSTALLATION_CONDITIONS: InstallationCondition[] = [
     percent_extra: 0,
     active: true,
     sort_order: 10,
-    notes: "Fallback local.",
   },
   {
     code: "A_3_METROS",
@@ -41,7 +57,6 @@ const FALLBACK_INSTALLATION_CONDITIONS: InstallationCondition[] = [
     percent_extra: 10,
     active: true,
     sort_order: 20,
-    notes: "Fallback local.",
   },
   {
     code: "A_4_METROS",
@@ -49,7 +64,6 @@ const FALLBACK_INSTALLATION_CONDITIONS: InstallationCondition[] = [
     percent_extra: 15,
     active: true,
     sort_order: 30,
-    notes: "Fallback local.",
   },
   {
     code: "MAYOR_A_4_METROS",
@@ -57,7 +71,6 @@ const FALLBACK_INSTALLATION_CONDITIONS: InstallationCondition[] = [
     percent_extra: 25,
     active: true,
     sort_order: 40,
-    notes: "Fallback local.",
   },
   {
     code: "CON_ESCALERA",
@@ -65,7 +78,6 @@ const FALLBACK_INSTALLATION_CONDITIONS: InstallationCondition[] = [
     percent_extra: 15,
     active: true,
     sort_order: 50,
-    notes: "Fallback local.",
   },
   {
     code: "CON_ANDAMIOS",
@@ -73,7 +85,6 @@ const FALLBACK_INSTALLATION_CONDITIONS: InstallationCondition[] = [
     percent_extra: 25,
     active: true,
     sort_order: 60,
-    notes: "Fallback local.",
   },
   {
     code: "EN_FACHADA",
@@ -81,7 +92,6 @@ const FALLBACK_INSTALLATION_CONDITIONS: InstallationCondition[] = [
     percent_extra: 20,
     active: true,
     sort_order: 70,
-    notes: "Fallback local.",
   },
   {
     code: "EN_TECHO",
@@ -89,7 +99,6 @@ const FALLBACK_INSTALLATION_CONDITIONS: InstallationCondition[] = [
     percent_extra: 30,
     active: true,
     sort_order: 80,
-    notes: "Fallback local.",
   },
   {
     code: "EN_ALTURA_CON_DESCOLGADA",
@@ -97,7 +106,6 @@ const FALLBACK_INSTALLATION_CONDITIONS: InstallationCondition[] = [
     percent_extra: 40,
     active: true,
     sort_order: 90,
-    notes: "Fallback local.",
   },
   {
     code: "INSTALACION_ESPECIAL",
@@ -105,7 +113,64 @@ const FALLBACK_INSTALLATION_CONDITIONS: InstallationCondition[] = [
     percent_extra: 50,
     active: true,
     sort_order: 100,
-    notes: "Fallback local.",
+  },
+];
+
+const FALLBACK_TRANSPORT_ZONES: TransportZone[] = [
+  {
+    code: "ZONA_A",
+    label: "ZONA - A",
+    display_name: "ZONA A — Zona cercana / base",
+    coverage_text: "Agregar colonias o límites reales de la Zona A.",
+    work_cost: 100,
+    delivery_cost: 55,
+    delivery_discount_percent: 45,
+    active: true,
+    sort_order: 10,
+  },
+  {
+    code: "ZONA_B",
+    label: "ZONA - B",
+    display_name: "ZONA B — Zona urbana extendida",
+    coverage_text: "Agregar colonias o límites reales de la Zona B.",
+    work_cost: 170,
+    delivery_cost: 110,
+    delivery_discount_percent: 35.29,
+    active: true,
+    sort_order: 20,
+  },
+  {
+    code: "ZONA_C",
+    label: "ZONA - C",
+    display_name: "ZONA C — Zona media / mayor distancia",
+    coverage_text: "Agregar colonias o límites reales de la Zona C.",
+    work_cost: 240,
+    delivery_cost: 160,
+    delivery_discount_percent: 33.33,
+    active: true,
+    sort_order: 30,
+  },
+  {
+    code: "ZONA_D",
+    label: "ZONA - D",
+    display_name: "ZONA D — Zona lejana",
+    coverage_text: "Agregar colonias o límites reales de la Zona D.",
+    work_cost: 400,
+    delivery_cost: 300,
+    delivery_discount_percent: 25,
+    active: true,
+    sort_order: 40,
+  },
+  {
+    code: "ZONA_E",
+    label: "ZONA - E",
+    display_name: "ZONA E — Zona foránea / especial",
+    coverage_text: "Agregar colonias o límites reales de la Zona E.",
+    work_cost: 480,
+    delivery_cost: 360,
+    delivery_discount_percent: 25,
+    active: true,
+    sort_order: 50,
   },
 ];
 
@@ -177,6 +242,14 @@ export default async function CajasLuzPage() {
     .eq("active", true)
     .order("sort_order", { ascending: true });
 
+  const { data: transportRows, error: transportError } = await supabase
+    .from("transport_zones")
+    .select(
+      "code,label,display_name,coverage_text,work_cost,delivery_cost,delivery_discount_percent,active,sort_order,notes"
+    )
+    .eq("active", true)
+    .order("sort_order", { ascending: true });
+
   const rows = (costRows ?? []) as CostRow[];
 
   const installationConditionsFromDb: InstallationCondition[] = (
@@ -190,10 +263,30 @@ export default async function CajasLuzPage() {
     notes: condition.notes,
   }));
 
+  const transportZonesFromDb: TransportZone[] = (
+    (transportRows ?? []) as TransportZoneRow[]
+  ).map((zone) => ({
+    code: zone.code,
+    label: zone.label,
+    display_name: zone.display_name,
+    coverage_text: zone.coverage_text,
+    work_cost: Number(zone.work_cost ?? 0),
+    delivery_cost: Number(zone.delivery_cost ?? 0),
+    delivery_discount_percent: Number(zone.delivery_discount_percent ?? 0),
+    active: zone.active,
+    sort_order: zone.sort_order,
+    notes: zone.notes,
+  }));
+
   const installationConditions =
     !conditionError && installationConditionsFromDb.length > 0
       ? installationConditionsFromDb
       : FALLBACK_INSTALLATION_CONDITIONS;
+
+  const transportZones =
+    !transportError && transportZonesFromDb.length > 0
+      ? transportZonesFromDb
+      : FALLBACK_TRANSPORT_ZONES;
 
   if (access.role === "invitado") {
     return (
@@ -202,6 +295,7 @@ export default async function CajasLuzPage() {
           <GuestUsageGate
             costRows={rows}
             installationConditions={installationConditions}
+            transportZones={transportZones}
             initialLimit={access.cotizador_limit}
             initialUsed={access.cotizador_used}
             initialRemaining={access.cotizador_remaining}
@@ -231,17 +325,15 @@ export default async function CajasLuzPage() {
           </p>
 
           <p className="mt-2 text-xs text-neutral-500">
-            Condiciones de instalación cargadas:{" "}
-            {installationConditions.length}
-            {conditionError
-              ? " · Usando valores de respaldo porque Supabase no permitió leer la tabla."
-              : ""}
+            Condiciones: {installationConditions.length} · Zonas de traslado:{" "}
+            {transportZones.length}
           </p>
         </div>
 
         <CajasLuzForm
           costRows={rows}
           installationConditions={installationConditions}
+          transportZones={transportZones}
           saveAction={saveCajaLuzQuote}
           userRole={access.role}
         />

@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import type { CostRow, InstallationCondition } from "./_lib/types";
+import type {
+  CostRow,
+  InstallationCondition,
+  TransportZone,
+} from "./_lib/types";
 import CajasLuzForm from "./CajasLuzForm";
 import type {
   ConsumeCotizadorResponse,
@@ -12,6 +16,7 @@ import type {
 export default function GuestUsageGate({
   costRows,
   installationConditions,
+  transportZones,
   initialLimit,
   initialUsed,
   initialRemaining,
@@ -21,6 +26,7 @@ export default function GuestUsageGate({
 }: {
   costRows: CostRow[];
   installationConditions: InstallationCondition[];
+  transportZones: TransportZone[];
   initialLimit: number | null;
   initialUsed: number;
   initialRemaining: number | null;
@@ -81,6 +87,7 @@ export default function GuestUsageGate({
         <CajasLuzForm
           costRows={costRows}
           installationConditions={installationConditions}
+          transportZones={transportZones}
           saveAction={saveAction}
           userRole={userRole}
         />

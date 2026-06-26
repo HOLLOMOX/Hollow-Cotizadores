@@ -68,7 +68,8 @@ export const DEFAULT_FORM: FormState = {
 
   incluyeInstalacion: "SI",
   alturaCondicion: "A NIVEL DE PISO / BAJA ALTURA",
-  traslado: "Zona A",
+  traslado: "ZONA_A",
+  trasladoTipo: "TRABAJO",
   disenoGrafico: "15 min. de diseño gráfico",
 
   personasFabricacion: "1",
