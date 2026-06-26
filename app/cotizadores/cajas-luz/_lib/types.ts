@@ -50,6 +50,16 @@ export type TransportZone = {
   notes?: string | null;
 };
 
+export type DesignOption = {
+  code: string;
+  label: string;
+  minutes: number;
+  price: number;
+  active?: boolean;
+  sort_order?: number;
+  notes?: string | null;
+};
+
 export type FormState = {
   cliente: string;
   vendedor: string;

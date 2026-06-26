@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import type {
   CostRow,
+  DesignOption,
   InstallationCondition,
   TransportZone,
 } from "./_lib/types";
@@ -17,6 +18,7 @@ export default function GuestUsageGate({
   costRows,
   installationConditions,
   transportZones,
+  designOptions,
   initialLimit,
   initialUsed,
   initialRemaining,
@@ -27,6 +29,7 @@ export default function GuestUsageGate({
   costRows: CostRow[];
   installationConditions: InstallationCondition[];
   transportZones: TransportZone[];
+  designOptions: DesignOption[];
   initialLimit: number | null;
   initialUsed: number;
   initialRemaining: number | null;
@@ -88,6 +91,7 @@ export default function GuestUsageGate({
           costRows={costRows}
           installationConditions={installationConditions}
           transportZones={transportZones}
+          designOptions={designOptions}
           saveAction={saveAction}
           userRole={userRole}
         />

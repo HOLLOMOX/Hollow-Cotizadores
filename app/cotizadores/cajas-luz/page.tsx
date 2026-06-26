@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import type {
   CostRow,
+  DesignOption,
   InstallationCondition,
   TransportZone,
 } from "./_lib/types";
@@ -42,6 +43,99 @@ type TransportZoneRow = {
   sort_order: number;
   notes: string | null;
 };
+
+type DesignOptionRow = {
+  code: string;
+  label: string;
+  minutes: number | string;
+  price: number | string;
+  active: boolean;
+  sort_order: number;
+  notes: string | null;
+};
+
+const FALLBACK_DESIGN_OPTIONS: DesignOption[] = [
+  {
+    code: "NO_DISENO",
+    label: "NO LLEVA DISEÑO",
+    minutes: 0,
+    price: 0,
+    active: true,
+    sort_order: 0,
+  },
+  {
+    code: "DISENO_15_MIN",
+    label: "15 MIN. DE DISEÑO GRÁFICO",
+    minutes: 15,
+    price: 80,
+    active: true,
+    sort_order: 10,
+  },
+  {
+    code: "DISENO_30_MIN",
+    label: "30 MIN. DE DISEÑO GRÁFICO",
+    minutes: 30,
+    price: 155,
+    active: true,
+    sort_order: 20,
+  },
+  {
+    code: "DISENO_45_MIN",
+    label: "45 MIN. DE DISEÑO GRÁFICO",
+    minutes: 45,
+    price: 230,
+    active: true,
+    sort_order: 30,
+  },
+  {
+    code: "DISENO_60_MIN",
+    label: "60 MIN. DE DISEÑO GRÁFICO",
+    minutes: 60,
+    price: 305,
+    active: true,
+    sort_order: 40,
+  },
+  {
+    code: "DISENO_90_MIN",
+    label: "90 MIN. DE DISEÑO GRÁFICO",
+    minutes: 90,
+    price: 385,
+    active: true,
+    sort_order: 50,
+  },
+  {
+    code: "DISENO_120_MIN",
+    label: "120 MIN. DE DISEÑO GRÁFICO",
+    minutes: 120,
+    price: 455,
+    active: true,
+    sort_order: 60,
+  },
+  {
+    code: "DISENO_150_MIN",
+    label: "150 MIN. DE DISEÑO GRÁFICO",
+    minutes: 150,
+    price: 530,
+    active: true,
+    sort_order: 70,
+  },
+  {
+    code: "DISENO_180_MIN",
+    label: "180 MIN. DE DISEÑO GRÁFICO",
+    minutes: 180,
+    price: 610,
+    active: true,
+    sort_order: 80,
+  },
+  {
+    code: "DISENO_240_MIN",
+    label: "240 MIN. DE DISEÑO GRÁFICO",
+    minutes: 240,
+    price: 685,
+    active: true,
+    sort_order: 90,
+  },
+];
 
 const FALLBACK_INSTALLATION_CONDITIONS: InstallationCondition[] = [
   {
@@ -250,6 +344,12 @@ export default async function CajasLuzPage() {
     .eq("active", true)
     .order("sort_order", { ascending: true });
 
+  const { data: designRows, error: designError } = await supabase
+    .from("design_options")
+    .select("code,label,minutes,price,active,sort_order,notes")
+    .eq("active", true)
+    .order("sort_order", { ascending: true });
+
   const rows = (costRows ?? []) as CostRow[];
 
   const installationConditionsFromDb: InstallationCondition[] = (
@@ -278,6 +378,18 @@ export default async function CajasLuzPage() {
     notes: zone.notes,
   }));
 
+  const designOptionsFromDb: DesignOption[] = (
+    (designRows ?? []) as DesignOptionRow[]
+  ).map((design) => ({
+    code: design.code,
+    label: design.label,
+    minutes: Number(design.minutes ?? 0),
+    price: Number(design.price ?? 0),
+    active: design.active,
+    sort_order: design.sort_order,
+    notes: design.notes,
+  }));
+
   const installationConditions =
     !conditionError && installationConditionsFromDb.length > 0
       ? installationConditionsFromDb
@@ -288,6 +400,11 @@ export default async function CajasLuzPage() {
       ? transportZonesFromDb
       : FALLBACK_TRANSPORT_ZONES;
 
+  const designOptions =
+    !designError && designOptionsFromDb.length > 0
+      ? designOptionsFromDb
+      : FALLBACK_DESIGN_OPTIONS;
+
   if (access.role === "invitado") {
     return (
       <main className="min-h-screen bg-neutral-950 px-4 py-8 text-white sm:px-6 lg:px-8">
@@ -296,6 +413,7 @@ export default async function CajasLuzPage() {
             costRows={rows}
             installationConditions={installationConditions}
             transportZones={transportZones}
+            designOptions={designOptions}
             initialLimit={access.cotizador_limit}
             initialUsed={access.cotizador_used}
             initialRemaining={access.cotizador_remaining}
@@ -326,7 +444,7 @@ export default async function CajasLuzPage() {
 
           <p className="mt-2 text-xs text-neutral-500">
             Condiciones: {installationConditions.length} · Zonas de traslado:{" "}
-            {transportZones.length}
+            {transportZones.length} · Diseños: {designOptions.length}
           </p>
         </div>
 
@@ -334,6 +452,7 @@ export default async function CajasLuzPage() {
           costRows={rows}
           installationConditions={installationConditions}
           transportZones={transportZones}
+          designOptions={designOptions}
           saveAction={saveCajaLuzQuote}
           userRole={access.role}
         />

@@ -9,6 +9,7 @@ import {
 } from "react";
 import type {
   CostRow,
+  DesignOption,
   FormState,
   InstallationCondition,
   TransportZone,
@@ -28,12 +29,14 @@ export default function CajasLuzForm({
   costRows,
   installationConditions,
   transportZones,
+  designOptions,
   saveAction,
   userRole,
 }: {
   costRows: CostRow[];
   installationConditions: InstallationCondition[];
   transportZones: TransportZone[];
+  designOptions: DesignOption[];
   saveAction?: (payload: SaveQuotePayload) => Promise<SaveQuoteResponse>;
   userRole: string;
 }) {
@@ -69,6 +72,22 @@ export default function CajasLuzForm({
       ? transportZones.map((zone) => zone.code)
       : ["ZONA_A", "ZONA_B", "ZONA_C", "ZONA_D", "ZONA_E"];
 
+  const designOptionOptions =
+    designOptions.length > 0
+      ? designOptions.map((design) => design.code)
+      : [
+          "NO_DISENO",
+          "DISENO_15_MIN",
+          "DISENO_30_MIN",
+          "DISENO_45_MIN",
+          "DISENO_60_MIN",
+          "DISENO_90_MIN",
+          "DISENO_120_MIN",
+          "DISENO_150_MIN",
+          "DISENO_180_MIN",
+          "DISENO_240_MIN",
+        ];
+
   const selectedTransportZone = transportZones.find(
     (zone) => zone.code === form.traslado
   );
@@ -77,6 +96,12 @@ export default function CajasLuzForm({
     form.trasladoTipo === "ENTREGA"
       ? selectedTransportZone?.delivery_cost ?? 0
       : selectedTransportZone?.work_cost ?? 0;
+
+  const selectedDesignOption = designOptions.find(
+    (design) => design.code === form.disenoGrafico
+  );
+
+  const selectedDesignCost = selectedDesignOption?.price ?? 0;
 
   const costMap = useMemo(() => {
     const map = new Map<string, number>();
@@ -93,9 +118,10 @@ export default function CajasLuzForm({
       form,
       costMap,
       installationConditions,
-      transportZones
+      transportZones,
+      designOptions
     );
-  }, [form, costMap, installationConditions, transportZones]);
+  }, [form, costMap, installationConditions, transportZones, designOptions]);
 
   function updateField<K extends keyof FormState>(
     key: K,
@@ -314,7 +340,7 @@ export default function CajasLuzForm({
               />
             </FieldGroup>
 
-            <FieldGroup title="Instalación y traslado">
+            <FieldGroup title="Instalación, traslado y diseño">
               <SelectField
                 label="Incluye instalación"
                 value={form.incluyeInstalacion}
@@ -381,11 +407,43 @@ export default function CajasLuzForm({
                 )}
               </InfoBox>
 
-              <TextField
+              <SelectField
                 label="Diseño gráfico"
                 value={form.disenoGrafico}
+                options={designOptionOptions}
+                getOptionLabel={(code) => {
+                  const design = designOptions.find(
+                    (item) => item.code === code
+                  );
+
+                  if (!design) return code;
+
+                  return design.price > 0
+                    ? `${design.label} — ${money(design.price)}`
+                    : design.label;
+                }}
                 onChange={(value) => updateField("disenoGrafico", value)}
               />
+
+              <InfoBox>
+                {selectedDesignOption ? (
+                  <>
+                    <strong>{selectedDesignOption.label}</strong>
+                    <br />
+                    Minutos: {selectedDesignOption.minutes}
+                    <br />
+                    Costo aplicado: {money(selectedDesignCost)}
+                    {selectedDesignOption.price <= 0 && (
+                      <>
+                        <br />
+                        No se agregará costo de diseño a la cotización.
+                      </>
+                    )}
+                  </>
+                ) : (
+                  "No se encontró información de esta opción de diseño."
+                )}
+              </InfoBox>
             </FieldGroup>
           </div>
         </section>
@@ -492,6 +550,74 @@ export default function CajasLuzForm({
               <CaratulaInfo caratula={form.caratula} />
             </FieldGroup>
 
+            {form.iluminacion === "Lámparas LED" && (
+              <FieldGroup title="Configuración de lámpara">
+                <NumberField
+                  label="Separación de lámparas"
+                  suffix="m"
+                  value={form.separacionLamparasM}
+                  onChange={(value) => updateField("separacionLamparasM", value)}
+                />
+
+                <NumberField
+                  label="Watts por lámpara"
+                  suffix="W"
+                  value={form.wattsPorLampara}
+                  onChange={(value) => updateField("wattsPorLampara", value)}
+                />
+
+                <InfoBox>
+                  Lámparas LED no usan fuente. Se cargan directo como pieza.
+                </InfoBox>
+              </FieldGroup>
+            )}
+
+            {form.iluminacion === "Módulos LED normales" && (
+              <FieldGroup title="Cálculo LED normal">
+                <NumberField
+                  label="Tiras normales por m²"
+                  suffix="tiras/m²"
+                  value={form.tirasPorM2Normal}
+                  onChange={(value) => updateField("tirasPorM2Normal", value)}
+                />
+
+                <InfoBox>
+                  Cada tira trae 20 módulos. Cada módulo normal consume 0.72 W.
+                </InfoBox>
+              </FieldGroup>
+            )}
+
+            {form.iluminacion === "Módulos LED ultra brillantes" && (
+              <FieldGroup title="Cálculo LED ultrabrillante">
+                <NumberField
+                  label="Tiras ultra por m²"
+                  suffix="tiras/m²"
+                  value={form.tirasPorM2Ultra}
+                  onChange={(value) => updateField("tirasPorM2Ultra", value)}
+                />
+
+                <InfoBox>
+                  Cada tira trae 20 módulos. Cada módulo ultrabrillante consume
+                  1.5 W.
+                </InfoBox>
+              </FieldGroup>
+            )}
+
+            {form.iluminacion === "Micro LEDs" && (
+              <FieldGroup title="Cálculo micro LED">
+                <NumberField
+                  label="Tiras micro por m²"
+                  suffix="tiras/m²"
+                  value={form.tirasPorM2Micro}
+                  onChange={(value) => updateField("tirasPorM2Micro", value)}
+                />
+
+                <InfoBox>
+                  Cada tira trae 20 módulos. Cada micro LED consume 0.2 W.
+                </InfoBox>
+              </FieldGroup>
+            )}
+
             <FieldGroup title="Precio">
               <NumberField
                 label="Margen"
@@ -595,6 +721,19 @@ export default function CajasLuzForm({
                       {money(result.costos.totalConIva)}
                     </span>
                   </div>
+                </div>
+              )}
+
+              {!canViewSalePrice && (
+                <div className="mt-5 rounded-xl border border-yellow-500/30 bg-yellow-500/10 px-4 py-4 text-yellow-100">
+                  <p className="text-sm font-bold uppercase">
+                    Vista sin precios de venta
+                  </p>
+
+                  <p className="mt-1 text-xs leading-5">
+                    Este rol no tiene permiso para ver precio final, costos,
+                    utilidad ni margen.
+                  </p>
                 </div>
               )}
             </div>
