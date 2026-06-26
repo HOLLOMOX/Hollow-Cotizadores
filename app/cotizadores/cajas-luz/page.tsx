@@ -408,7 +408,7 @@ export default async function CajasLuzPage() {
   if (access.role === "invitado") {
     return (
       <main className="min-h-screen bg-neutral-950 px-4 py-8 text-white sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
+        <div className="mx-auto w-full max-w-7xl">
           <GuestUsageGate
             costRows={rows}
             installationConditions={installationConditions}
@@ -428,26 +428,7 @@ export default async function CajasLuzPage() {
 
   return (
     <main className="min-h-screen bg-neutral-950 px-4 py-8 text-white sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-6 rounded-2xl border border-neutral-800 bg-neutral-900 p-4">
-          <p className="text-xs font-bold uppercase tracking-[0.25em] text-yellow-400">
-            Hollow Cotizadores
-          </p>
-
-          <h1 className="mt-2 text-2xl font-black">
-            Cotizador de cajas de luz
-          </h1>
-
-          <p className="mt-1 text-sm text-neutral-400">
-            Usuario: {user.email} · Rol: {access.role}
-          </p>
-
-          <p className="mt-2 text-xs text-neutral-500">
-            Condiciones: {installationConditions.length} · Zonas de traslado:{" "}
-            {transportZones.length} · Diseños: {designOptions.length}
-          </p>
-        </div>
-
+      <div className="mx-auto w-full max-w-7xl">
         <CajasLuzForm
           costRows={rows}
           installationConditions={installationConditions}
