@@ -433,19 +433,24 @@ function normalizeQuote(
 ): NormalizedQuote {
   const id = getString(row, ["id", "quote_id"]);
 
-  const form = getNestedRecord(row, ["form", "quote_form", "form_data"]);
-  const result = getNestedRecord(row, [
-    "result",
-    "quote_result",
-    "calculation_result",
-  ]);
+  const form =
+    getNestedRecord(row, ["form", "quote_form", "form_data"]) ?? {};
+
+  const result =
+    getNestedRecord(row, [
+      "result",
+      "quote_result",
+      "calculation_result",
+      "result_data",
+    ]) ?? {};
 
   const payload = getNestedRecord(row, ["payload", "data"]);
   const payloadForm = getRecord(payload?.form);
   const payloadResult = getRecord(payload?.result);
 
-  const safeForm = form ?? payloadForm ?? {};
-  const safeResult = result ?? payloadResult ?? {};
+  const safeForm = Object.keys(form).length > 0 ? form : payloadForm ?? {};
+  const safeResult =
+    Object.keys(result).length > 0 ? result : payloadResult ?? {};
 
   const costos = getRecord(safeResult.costos) ?? {};
   const medidas = getRecord(safeResult.medidas) ?? {};
@@ -458,7 +463,7 @@ function normalizeQuote(
     `COT-${id.slice(0, 8).toUpperCase()}`;
 
   const cliente =
-    getString(row, ["customer_name", "client_name", "cliente", "customer"]) ||
+    getString(row, ["client_name", "customer_name", "cliente", "customer"]) ||
     getString(safeForm, ["cliente", "customer_name", "client_name"]) ||
     "Sin cliente";
 
@@ -468,7 +473,7 @@ function normalizeQuote(
     "Sin proyecto";
 
   const vendedor =
-    getString(row, ["seller", "vendedor", "seller_name"]) ||
+    getString(row, ["seller_name", "seller", "vendedor"]) ||
     getString(safeForm, ["vendedor", "seller"]) ||
     "Sin vendedor";
 
@@ -483,33 +488,46 @@ function normalizeQuote(
 
   const status = normalizeStatus(statusRaw);
 
+  const costoDirecto =
+    getNumber(row, ["cost_direct", "costo_directo", "costoDirecto"]) ||
+    getNumber(costos, ["costoDirecto", "costo_directo", "cost_direct"]);
+
+  const precioSinIva =
+    getNumber(row, ["price_without_tax", "precio_sin_iva", "precioSinIva"]) ||
+    getNumber(costos, ["precioSinIva", "precio_sin_iva", "price_without_tax"]);
+
+  const iva =
+    getNumber(row, ["tax_amount", "iva", "tax"]) ||
+    getNumber(costos, ["iva", "tax", "tax_amount"]);
+
   const totalConIva =
     getNumber(row, [
+      "total_with_tax",
       "total_con_iva",
       "totalConIva",
       "total_with_iva",
       "total",
       "amount",
-    ]) || getNumber(costos, ["totalConIva", "total_con_iva", "total"]);
-
-  const precioSinIva =
-    getNumber(row, ["precio_sin_iva", "precioSinIva", "subtotal"]) ||
-    getNumber(costos, ["precioSinIva", "precio_sin_iva", "subtotal"]);
-
-  const iva =
-    getNumber(row, ["iva", "tax"]) || getNumber(costos, ["iva", "tax"]);
-
-  const costoDirecto =
-    getNumber(row, ["costo_directo", "costoDirecto", "direct_cost"]) ||
-    getNumber(costos, ["costoDirecto", "costo_directo", "direct_cost"]);
+    ]) ||
+    getNumber(costos, [
+      "totalConIva",
+      "total_con_iva",
+      "total_with_tax",
+      "total",
+    ]);
 
   const utilidad =
-    getNumber(row, ["utilidad", "profit"]) ||
-    getNumber(costos, ["utilidad", "profit"]);
+    getNumber(row, ["utility_amount", "utilidad", "profit"]) ||
+    getNumber(costos, ["utilidad", "profit", "utility_amount"]);
 
   const margenPorcentaje =
-    getNumber(row, ["margen", "margenPorcentaje", "margin"]) ||
-    getNumber(costos, ["margenPorcentaje", "margen", "margin"]);
+    getNumber(row, ["margin_percent", "margen", "margenPorcentaje", "margin"]) ||
+    getNumber(costos, [
+      "margenPorcentaje",
+      "margen",
+      "margin",
+      "margin_percent",
+    ]);
 
   const createdAt = getString(row, ["created_at", "createdAt", "date"]) || "";
   const updatedAt = getString(row, ["updated_at", "updatedAt"]) || createdAt;
@@ -526,17 +544,24 @@ function normalizeQuote(
     "Sin usuario";
 
   const textoCotizacion =
-    getString(row, ["texto_cotizacion", "textoCotizacion", "quote_text"]) ||
+    getString(row, ["quote_text", "texto_cotizacion", "textoCotizacion"]) ||
     getString(safeResult, [
       "textoCotizacion",
       "texto_cotizacion",
       "quote_text",
     ]);
 
-  const partidas = normalizePartidas(getUnknownArray(safeResult.partidas));
+  const materialLinesFromColumn = getUnknownArray(row.material_lines);
+  const materialLinesFromResult = getUnknownArray(safeResult.partidas);
+
+  const partidas = normalizePartidas(
+    materialLinesFromColumn.length > 0
+      ? materialLinesFromColumn
+      : materialLinesFromResult
+  );
 
   const ownerCandidates = [
-    getString(row, ["created_by", "created_by_id", "user_id", "owner_id"]),
+    getString(row, ["user_id", "created_by", "created_by_id", "owner_id"]),
     getString(row, ["created_by_email", "user_email", "email"]),
     getString(safeForm, ["user_id", "created_by"]),
     getString(safeForm, ["email", "vendedor"]),
