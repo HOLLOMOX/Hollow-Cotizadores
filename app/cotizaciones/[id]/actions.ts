@@ -8,6 +8,8 @@ export type QuoteStatus =
   | "ENVIADA"
   | "APROBADA"
   | "RECHAZADA"
+  | "PRODUCCION"
+  | "TERMINADA"
   | "CANCELADA";
 
 export type UpdateQuoteStatusResponse =
@@ -38,7 +40,22 @@ const VALID_STATUSES: QuoteStatus[] = [
   "ENVIADA",
   "APROBADA",
   "RECHAZADA",
+  "PRODUCCION",
+  "TERMINADA",
   "CANCELADA",
+];
+
+const SELLER_ALLOWED_STATUSES: QuoteStatus[] = [
+  "BORRADOR",
+  "ENVIADA",
+  "APROBADA",
+  "RECHAZADA",
+  "CANCELADA",
+];
+
+const PRODUCTION_ALLOWED_STATUSES: QuoteStatus[] = [
+  "PRODUCCION",
+  "TERMINADA",
 ];
 
 type QuoteRow = {
@@ -82,10 +99,67 @@ function createDuplicatedTitle(title: string | null) {
   return `Copia de ${cleanTitle}`;
 }
 
+function normalizeRole(role: string | null | undefined) {
+  return String(role ?? "")
+    .trim()
+    .toLowerCase();
+}
+
+function normalizeStatus(status: string): QuoteStatus | null {
+  const clean = status
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "_");
+
+  if (clean === "PRODUCCIÓN") return "PRODUCCION";
+  if (clean === "PRODUCCION") return "PRODUCCION";
+
+  if ((VALID_STATUSES as string[]).includes(clean)) {
+    return clean as QuoteStatus;
+  }
+
+  return null;
+}
+
+function canRoleChangeStatus(roleRaw: string, nextStatus: QuoteStatus) {
+  const role = normalizeRole(roleRaw);
+
+  if (role === "admin") {
+    return true;
+  }
+
+  if (role === "vendedor") {
+    return SELLER_ALLOWED_STATUSES.includes(nextStatus);
+  }
+
+  if (role === "produccion" || role === "producción") {
+    return PRODUCTION_ALLOWED_STATUSES.includes(nextStatus);
+  }
+
+  return false;
+}
+
+function canRoleDuplicate(roleRaw: string) {
+  const role = normalizeRole(roleRaw);
+
+  return role === "admin" || role === "vendedor";
+}
+
 export async function updateQuoteStatus(
   quoteId: string,
-  nextStatus: QuoteStatus
+  nextStatusRaw: QuoteStatus | string
 ): Promise<UpdateQuoteStatusResponse> {
+  const nextStatus = normalizeStatus(nextStatusRaw);
+
+  if (!nextStatus) {
+    return {
+      ok: false,
+      message: "Estado no válido.",
+    };
+  }
+
   const { user, profile, supabase } = await getCurrentUserProfile();
 
   if (!user) {
@@ -102,17 +176,12 @@ export async function updateQuoteStatus(
     };
   }
 
-  if (!VALID_STATUSES.includes(nextStatus)) {
-    return {
-      ok: false,
-      message: "Estado no válido.",
-    };
-  }
+  const role = normalizeRole(profile.role);
 
-  if (profile.role === "invitado" || profile.role === "viewer") {
+  if (!canRoleChangeStatus(role, nextStatus)) {
     return {
       ok: false,
-      message: "Tu rol no puede cambiar estados de cotizaciones.",
+      message: "Tu rol no tiene permiso para asignar este estado.",
     };
   }
 
@@ -137,17 +206,18 @@ export async function updateQuoteStatus(
     status: string | null;
   };
 
-  const isAdmin = profile.role === "admin";
+  const isAdmin = role === "admin";
+  const isProduction = role === "produccion" || role === "producción";
   const isOwner = quote.user_id === user.id;
 
-  if (!isAdmin && !isOwner) {
+  if (!isAdmin && !isProduction && !isOwner) {
     return {
       ok: false,
       message: "No tienes permiso para modificar esta cotización.",
     };
   }
 
-  const previousStatus = quote.status ?? "BORRADOR";
+  const previousStatus = normalizeStatus(quote.status ?? "") ?? "BORRADOR";
 
   const { error: updateError } = await supabase
     .from("quotes")
@@ -176,7 +246,7 @@ export async function updateQuoteStatus(
       previous_status: previousStatus,
       next_status: nextStatus,
       changed_by: user.email,
-      role: profile.role,
+      role,
     },
   });
 
@@ -210,7 +280,9 @@ export async function duplicateQuote(
     };
   }
 
-  if (profile.role === "invitado" || profile.role === "viewer") {
+  const role = normalizeRole(profile.role);
+
+  if (!canRoleDuplicate(role)) {
     return {
       ok: false,
       message: "Tu rol no puede duplicar cotizaciones.",
@@ -254,7 +326,7 @@ export async function duplicateQuote(
 
   const original = quoteData as QuoteRow;
 
-  const isAdmin = profile.role === "admin";
+  const isAdmin = role === "admin";
   const isOwner = original.user_id === user.id;
 
   if (!isAdmin && !isOwner) {
@@ -320,7 +392,7 @@ export async function duplicateQuote(
       new_quote_number: created.quote_number,
       title: newTitle,
       duplicated_by: user.email,
-      role: profile.role,
+      role,
     },
   });
 

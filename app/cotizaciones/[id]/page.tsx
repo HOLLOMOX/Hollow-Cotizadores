@@ -3,6 +3,9 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import CopyQuoteText from "./CopyQuoteText";
+import StatusActions from "./StatusActions";
+import DuplicateQuoteButton from "./DuplicateQuoteButton";
+import { duplicateQuote, updateQuoteStatus } from "./actions";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -83,15 +86,38 @@ export default async function CotizacionDetallePage({
   }
 
   const role = access.role || "invitado";
+  const normalizedRole = role.trim().toLowerCase();
 
-  const canViewAllQuotes = role === "admin";
+  const canViewAllQuotes = normalizedRole === "admin";
+
   const canViewSalePrice =
-    role === "admin" || role === "vendedor" || role === "invitado";
-  const canViewInternalCosts = role === "admin" || role === "vendedor";
-  const canViewUtility = role === "admin" || role === "vendedor";
-  const canViewProductPrices = role === "admin" || role === "vendedor";
+    normalizedRole === "admin" ||
+    normalizedRole === "vendedor" ||
+    normalizedRole === "invitado";
+
+  const canViewInternalCosts =
+    normalizedRole === "admin" || normalizedRole === "vendedor";
+
+  const canViewUtility =
+    normalizedRole === "admin" || normalizedRole === "vendedor";
+
+  const canViewProductPrices =
+    normalizedRole === "admin" || normalizedRole === "vendedor";
+
   const canViewProductionMaterials =
-    role === "admin" || role === "vendedor" || role === "produccion";
+    normalizedRole === "admin" ||
+    normalizedRole === "vendedor" ||
+    normalizedRole === "produccion" ||
+    normalizedRole === "producción";
+
+  const canChangeStatus =
+    normalizedRole === "admin" ||
+    normalizedRole === "vendedor" ||
+    normalizedRole === "produccion" ||
+    normalizedRole === "producción";
+
+  const canDuplicate =
+    normalizedRole === "admin" || normalizedRole === "vendedor";
 
   const { data: quoteRow, error } = await supabase
     .from("quotes")
@@ -146,8 +172,8 @@ export default async function CotizacionDetallePage({
               </h1>
 
               <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-400">
-                Consulta el resumen comercial, texto para cliente y materiales
-                calculados de esta cotización.
+                Consulta el resumen comercial, texto para cliente, materiales
+                calculados y acciones disponibles para esta cotización.
               </p>
 
               <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -315,20 +341,36 @@ export default async function CotizacionDetallePage({
                 title="Opciones"
                 description="Acciones disponibles para esta cotización."
               >
-                <div className="grid gap-3">
-                  <Link
-                    href="/cotizaciones"
-                    className="rounded-2xl border border-neutral-700 bg-neutral-950 px-5 py-3 text-center text-sm font-black uppercase tracking-wide text-neutral-200 transition hover:border-yellow-400 hover:text-yellow-300"
-                  >
-                    Regresar al historial
-                  </Link>
+                <div className="grid gap-4">
+                  <StatusActions
+                    quoteId={quote.id}
+                    currentStatus={quote.status}
+                    role={role}
+                    canChange={canChangeStatus}
+                    updateAction={updateQuoteStatus}
+                  />
 
-                  <Link
-                    href="/cotizadores/cajas-luz"
-                    className="rounded-2xl bg-yellow-400 px-5 py-3 text-center text-sm font-black uppercase tracking-wide text-neutral-950 transition hover:bg-yellow-300"
-                  >
-                    Nueva cotización
-                  </Link>
+                  <DuplicateQuoteButton
+                    quoteId={quote.id}
+                    canDuplicate={canDuplicate}
+                    duplicateAction={duplicateQuote}
+                  />
+
+                  <div className="grid gap-3">
+                    <Link
+                      href="/cotizaciones"
+                      className="rounded-2xl border border-neutral-700 bg-neutral-950 px-5 py-3 text-center text-sm font-black uppercase tracking-wide text-neutral-200 transition hover:border-yellow-400 hover:text-yellow-300"
+                    >
+                      Regresar al historial
+                    </Link>
+
+                    <Link
+                      href="/cotizadores/cajas-luz"
+                      className="rounded-2xl bg-yellow-400 px-5 py-3 text-center text-sm font-black uppercase tracking-wide text-neutral-950 transition hover:bg-yellow-300"
+                    >
+                      Nueva cotización
+                    </Link>
+                  </div>
                 </div>
               </PanelCard>
             </div>
@@ -424,7 +466,7 @@ function normalizeQuote(
   const statusRaw =
     getString(row, ["status", "estado"]) ||
     getString(safeForm, ["status", "estado"]) ||
-    "borrador";
+    "BORRADOR";
 
   const status = normalizeStatus(statusRaw);
 
@@ -472,7 +514,11 @@ function normalizeQuote(
 
   const textoCotizacion =
     getString(row, ["texto_cotizacion", "textoCotizacion", "quote_text"]) ||
-    getString(safeResult, ["textoCotizacion", "texto_cotizacion", "quote_text"]);
+    getString(safeResult, [
+      "textoCotizacion",
+      "texto_cotizacion",
+      "quote_text",
+    ]);
 
   const partidas = normalizePartidas(getUnknownArray(safeResult.partidas));
 
@@ -963,6 +1009,7 @@ function normalizeStatus(status: string) {
   if (clean === "rejected") return "rechazada";
   if (clean === "production") return "produccion";
   if (clean === "finished") return "terminada";
+  if (clean === "cancelled" || clean === "canceled") return "cancelada";
 
   if (
     [
@@ -972,6 +1019,7 @@ function normalizeStatus(status: string) {
       "rechazada",
       "produccion",
       "terminada",
+      "cancelada",
     ].includes(clean)
   ) {
     return clean;
@@ -1013,6 +1061,10 @@ function getStatusMeta(status: string) {
     terminada: {
       label: "Terminada",
       className: "border-purple-500/40 bg-purple-500/10 text-purple-200",
+    },
+    cancelada: {
+      label: "Cancelada",
+      className: "border-red-700/40 bg-red-700/10 text-red-300",
     },
   };
 
