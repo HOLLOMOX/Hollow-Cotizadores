@@ -652,13 +652,14 @@ function PrintStyles() {
           @media print {
             @page {
               size: letter;
-              margin: 14mm;
+              margin: 12mm;
             }
 
             html,
             body {
               background: white !important;
               color: black !important;
+              font-family: Arial, Helvetica, sans-serif !important;
             }
 
             .no-print {
@@ -669,68 +670,222 @@ function PrintStyles() {
               display: block !important;
               color: #111 !important;
               font-family: Arial, Helvetica, sans-serif !important;
+              font-size: 12px !important;
             }
 
-            .print-card {
-              border: 1px solid #ddd !important;
-              border-radius: 12px !important;
-              padding: 16px !important;
-              margin-bottom: 14px !important;
+            .print-page {
+              width: 100% !important;
+            }
+
+            .print-header {
+              display: flex !important;
+              justify-content: space-between !important;
+              align-items: flex-start !important;
+              gap: 24px !important;
+              border-bottom: 2px solid #111 !important;
+              padding-bottom: 12px !important;
+              margin-bottom: 18px !important;
+            }
+
+            .print-brand {
+              display: flex !important;
+              align-items: center !important;
+              gap: 12px !important;
+            }
+
+            .print-logo {
+              width: 54px !important;
+              height: 54px !important;
+              border-radius: 14px !important;
+              background: #111 !important;
+              color: #facc15 !important;
+              display: flex !important;
+              align-items: center !important;
+              justify-content: center !important;
+              font-size: 16px !important;
+              font-weight: 900 !important;
+              letter-spacing: 0.06em !important;
+            }
+
+            .print-company-name {
+              margin: 0 !important;
+              font-size: 20px !important;
+              font-weight: 900 !important;
+              letter-spacing: 0.12em !important;
+            }
+
+            .print-company-sub {
+              margin: 2px 0 0 0 !important;
+              font-size: 11px !important;
+              color: #555 !important;
+              text-transform: uppercase !important;
+              letter-spacing: 0.08em !important;
+            }
+
+            .print-company-data {
+              margin-top: 10px !important;
+              line-height: 1.45 !important;
+              color: #333 !important;
+            }
+
+            .print-slogan {
+              text-align: right !important;
+              font-size: 12px !important;
+              color: #333 !important;
+              font-weight: 700 !important;
+            }
+
+            .print-title-row {
+              display: flex !important;
+              justify-content: space-between !important;
+              gap: 20px !important;
+              align-items: flex-start !important;
+              margin: 20px 0 12px 0 !important;
             }
 
             .print-title {
+              margin: 0 !important;
               font-size: 24px !important;
               font-weight: 900 !important;
-              margin: 0 !important;
             }
 
-            .print-subtitle {
-              font-size: 12px !important;
-              color: #555 !important;
-              margin-top: 4px !important;
+            .print-status {
+              display: inline-block !important;
+              margin-top: 6px !important;
+              padding: 5px 10px !important;
+              border: 1px solid #111 !important;
+              border-radius: 999px !important;
+              font-size: 10px !important;
+              font-weight: 900 !important;
+              text-transform: uppercase !important;
             }
 
-            .print-grid {
+            .print-grid-4 {
               display: grid !important;
-              grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-              gap: 10px !important;
+              grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+              gap: 0 !important;
+              border: 1px solid #ddd !important;
+              margin-bottom: 14px !important;
+            }
+
+            .print-grid-cell {
+              border-right: 1px solid #ddd !important;
+              padding: 10px !important;
+              min-height: 48px !important;
+            }
+
+            .print-grid-cell:last-child {
+              border-right: none !important;
             }
 
             .print-label {
+              margin: 0 0 4px 0 !important;
               font-size: 10px !important;
+              color: #555 !important;
               text-transform: uppercase !important;
-              color: #666 !important;
-              letter-spacing: 0.08em !important;
-              margin: 0 0 3px 0 !important;
+              font-weight: 900 !important;
+              letter-spacing: 0.06em !important;
             }
 
             .print-value {
-              font-size: 13px !important;
-              font-weight: 700 !important;
-              color: #111 !important;
               margin: 0 !important;
+              font-size: 12px !important;
+              color: #111 !important;
+              font-weight: 700 !important;
+              line-height: 1.4 !important;
             }
 
-            .print-total {
-              background: #111 !important;
-              color: white !important;
-              padding: 14px !important;
-              border-radius: 12px !important;
+            .print-addresses {
+              display: grid !important;
+              grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+              gap: 18px !important;
+              margin-bottom: 18px !important;
+            }
+
+            .print-address-title {
+              margin: 0 0 5px 0 !important;
+              font-weight: 900 !important;
+              font-size: 12px !important;
+            }
+
+            .print-address-text {
+              margin: 0 !important;
+              line-height: 1.5 !important;
+              color: #222 !important;
+            }
+
+            .print-table {
+              width: 100% !important;
+              border-collapse: collapse !important;
+              table-layout: fixed !important;
+              margin-top: 8px !important;
+            }
+
+            .print-table th {
+              border-bottom: 2px solid #111 !important;
+              padding: 8px 6px !important;
+              text-align: left !important;
+              font-size: 11px !important;
+              font-weight: 900 !important;
+            }
+
+            .print-table td {
+              border-bottom: 1px solid #ddd !important;
+              padding: 10px 6px !important;
+              vertical-align: top !important;
+              font-size: 11px !important;
+              line-height: 1.45 !important;
+            }
+
+            .print-table .num {
               text-align: right !important;
+              white-space: nowrap !important;
             }
 
-            .print-total small {
-              display: block !important;
-              font-size: 10px !important;
-              letter-spacing: 0.1em !important;
+            .print-description {
+              white-space: pre-wrap !important;
+              font-size: 11px !important;
+              line-height: 1.45 !important;
               text-transform: uppercase !important;
-              opacity: 0.75 !important;
             }
 
-            .print-total strong {
-              display: block !important;
-              font-size: 24px !important;
-              margin-top: 4px !important;
+            .print-totals {
+              width: 280px !important;
+              margin-left: auto !important;
+              margin-top: 18px !important;
+              border-top: 2px solid #111 !important;
+            }
+
+            .print-total-row {
+              display: flex !important;
+              justify-content: space-between !important;
+              gap: 16px !important;
+              padding: 7px 0 !important;
+              border-bottom: 1px solid #ddd !important;
+              font-size: 12px !important;
+            }
+
+            .print-total-row strong {
+              font-size: 13px !important;
+            }
+
+            .print-note {
+              margin-top: 28px !important;
+              font-size: 12px !important;
+              font-weight: 900 !important;
+              text-transform: uppercase !important;
+            }
+
+            .print-footer {
+              position: fixed !important;
+              bottom: 6mm !important;
+              left: 12mm !important;
+              right: 12mm !important;
+              border-top: 2px solid #111 !important;
+              padding-top: 6px !important;
+              text-align: center !important;
+              font-size: 10px !important;
+              color: #333 !important;
             }
           }
         `,
@@ -746,117 +901,193 @@ function PrintableQuote({
   quote: NormalizedQuote;
   canViewSalePrice: boolean;
 }) {
+  const subtotal = quote.costos.precioSinIva;
+  const iva = quote.costos.iva;
+  const total = quote.costos.totalConIva;
+
+  const quantity = getDisplay(quote.form.cantidad);
+  const unit = getDisplay(quote.form.unidad);
+
+  const description =
+    quote.textoCotizacion ||
+    [
+      "FABRICACIÓN DE CAJA DE LUZ",
+      `CLIENTE: ${quote.cliente}`,
+      `PROYECTO: ${quote.proyecto}`,
+      `MEDIDAS: ${getDisplay(quote.form.anchoM)} M X ${getDisplay(
+        quote.form.altoM
+      )} M`,
+      `CARÁTULA: ${getDisplay(quote.form.caratula)}`,
+      `ILUMINACIÓN: ${getDisplay(quote.form.iluminacion)}`,
+      `INSTALACIÓN: ${getDisplay(quote.form.incluyeInstalacion)}`,
+      `TRASLADO: ${getDisplay(quote.form.traslado)}`,
+    ].join("\n");
+
   return (
     <div className="print-area">
-      <section className="print-card">
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            gap: 20,
-          }}
-        >
+      <div className="print-page">
+        <header className="print-header">
           <div>
-            <p className="print-title">HOLLOW COTIZADORES</p>
-            <p className="print-subtitle">
-              COTIZACIÓN DE CAJA DE LUZ · {quote.quoteNumber}
+            <div className="print-brand">
+              <div className="print-logo">HM</div>
+
+              <div>
+                <p className="print-company-name">HOLLOW MOX</p>
+                <p className="print-company-sub">Hollow Cotizadores</p>
+              </div>
+            </div>
+
+            <div className="print-company-data">
+              <div>Sistema de cotización, historial y administración.</div>
+              <div>Acapulco, Guerrero, México</div>
+              <div>Correo: ventas@hollow.mx</div>
+            </div>
+          </div>
+
+          <div className="print-slogan">
+            <div>Cotización profesional</div>
+            <div>Hollow Cotizadores</div>
+          </div>
+        </header>
+
+        <section className="print-addresses">
+          <div>
+            <p className="print-address-title">Dirección / datos de cliente:</p>
+            <p className="print-address-text">
+              {quote.cliente}
+              <br />
+              Proyecto: {quote.proyecto}
+              <br />
+              Acapulco, Guerrero
+              <br />
+              México
             </p>
           </div>
 
-          <div style={{ textAlign: "right" }}>
-            <p className="print-label">Fecha</p>
-            <p className="print-value">{formatDate(quote.createdAt)}</p>
-          </div>
-        </div>
-      </section>
-
-      <section className="print-card">
-        <div className="print-grid">
-          <PrintItem title="Cliente" value={quote.cliente} />
-          <PrintItem title="Proyecto" value={quote.proyecto} />
-          <PrintItem title="Vendedor" value={quote.vendedor} />
-          <PrintItem title="Estado" value={getStatusMeta(quote.status).label} />
-        </div>
-      </section>
-
-      <section className="print-card">
-        <p className="print-label">Descripción para cliente</p>
-        <p
-          style={{
-            marginTop: 8,
-            fontSize: 13,
-            lineHeight: 1.7,
-            whiteSpace: "pre-wrap",
-          }}
-        >
-          {quote.textoCotizacion || "Sin descripción registrada."}
-        </p>
-      </section>
-
-      <section className="print-card">
-        <div className="print-grid">
-          <PrintItem
-            title="Tipo de caja"
-            value={getDisplay(quote.form.tipoCaja)}
-          />
-          <PrintItem
-            title="Carátula"
-            value={getDisplay(quote.form.caratula)}
-          />
-          <PrintItem
-            title="Iluminación"
-            value={getDisplay(quote.form.iluminacion)}
-          />
-          <PrintItem
-            title="Medidas"
-            value={`${getDisplay(quote.form.anchoM)} m x ${getDisplay(
-              quote.form.altoM
-            )} m`}
-          />
-          <PrintItem
-            title="Instalación"
-            value={getDisplay(quote.form.incluyeInstalacion)}
-          />
-          <PrintItem
-            title="Traslado"
-            value={getDisplay(quote.form.traslado)}
-          />
-        </div>
-      </section>
-
-      {canViewSalePrice && (
-        <section className="print-card">
-          <div className="print-grid">
-            <PrintItem
-              title="Precio sin IVA"
-              value={money(quote.costos.precioSinIva)}
-            />
-            <PrintItem title="IVA" value={money(quote.costos.iva)} />
-          </div>
-
-          <div className="print-total" style={{ marginTop: 14 }}>
-            <small>Total con IVA</small>
-            <strong>{money(quote.costos.totalConIva)}</strong>
+          <div>
+            <p className="print-address-title">Datos de cotización:</p>
+            <p className="print-address-text">
+              {quote.cliente}
+              <br />
+              Folio: {quote.quoteNumber}
+              <br />
+              Estado: {getStatusMeta(quote.status).label}
+              <br />
+              Fecha: {formatDate(quote.createdAt)}
+            </p>
           </div>
         </section>
-      )}
 
-      <section style={{ marginTop: 28, fontSize: 11, color: "#555" }}>
-        <p>
-          Esta cotización fue generada desde Hollow Cotizadores. Los precios y
-          condiciones pueden estar sujetos a revisión según alcance final del
+        <section className="print-title-row">
+          <div>
+            <h1 className="print-title">Presupuesto Nº {quote.quoteNumber}</h1>
+            <span className="print-status">
+              {getStatusMeta(quote.status).label}
+            </span>
+          </div>
+        </section>
+
+        <section className="print-grid-4">
+          <div className="print-grid-cell">
+            <p className="print-label">Su referencia</p>
+            <p className="print-value">{quote.cliente}</p>
+          </div>
+
+          <div className="print-grid-cell">
+            <p className="print-label">Fecha presupuesto</p>
+            <p className="print-value">{formatDate(quote.createdAt)}</p>
+          </div>
+
+          <div className="print-grid-cell">
+            <p className="print-label">Vendedor</p>
+            <p className="print-value">{quote.vendedor}</p>
+          </div>
+
+          <div className="print-grid-cell">
+            <p className="print-label">Plazo de pago</p>
+            <p className="print-value">Por definir</p>
+          </div>
+        </section>
+
+        <table className="print-table">
+          <thead>
+            <tr>
+              <th style={{ width: "46%" }}>Descripción</th>
+              <th style={{ width: "12%" }}>IVA</th>
+              <th style={{ width: "12%" }} className="num">
+                Cantidad
+              </th>
+              <th style={{ width: "12%" }} className="num">
+                Precio unidad
+              </th>
+              <th style={{ width: "8%" }} className="num">
+                Desc.(%)
+              </th>
+              <th style={{ width: "10%" }} className="num">
+                Precio
+              </th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr>
+              <td>
+                <div className="print-description">{description}</div>
+              </td>
+
+              <td>
+                IVA de Venta
+                <br />
+                16%
+              </td>
+
+              <td className="num">
+                {quantity !== "—" ? quantity : "1"}{" "}
+                {unit !== "—" ? unit : "PZA"}
+              </td>
+
+              <td className="num">
+                {canViewSalePrice ? money(subtotal) : "Oculto"}
+              </td>
+
+              <td className="num">0.00</td>
+
+              <td className="num">
+                {canViewSalePrice ? money(subtotal) : "Oculto"}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        {canViewSalePrice && (
+          <section className="print-totals">
+            <div className="print-total-row">
+              <span>Total neto:</span>
+              <span>{money(subtotal)}</span>
+            </div>
+
+            <div className="print-total-row">
+              <span>Impuestos:</span>
+              <span>{money(iva)}</span>
+            </div>
+
+            <div className="print-total-row">
+              <strong>Total:</strong>
+              <strong>{money(total)}</strong>
+            </div>
+          </section>
+        )}
+
+        <section className="print-note">
+          ***En materiales eléctricos no hay garantía***
+        </section>
+
+        <footer className="print-footer">
+          Hollow Cotizadores · Cotización generada automáticamente · Los precios
+          y condiciones pueden estar sujetos a revisión según alcance final del
           proyecto.
-        </p>
-      </section>
-    </div>
-  );
-}
-
-function PrintItem({ title, value }: { title: string; value: string }) {
-  return (
-    <div>
-      <p className="print-label">{title}</p>
-      <p className="print-value">{value || "—"}</p>
+        </footer>
+      </div>
     </div>
   );
 }
