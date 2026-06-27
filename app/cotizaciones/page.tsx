@@ -32,9 +32,7 @@ type NormalizedQuote = {
   ownerMatches: boolean;
 };
 
-type SearchParams = Promise<
-  Record<string, string | string[] | undefined>
->;
+type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
 const STATUS_OPTIONS = [
   "todos",
@@ -44,6 +42,7 @@ const STATUS_OPTIONS = [
   "rechazada",
   "produccion",
   "terminada",
+  "cancelada",
 ];
 
 export default async function CotizacionesPage({
@@ -78,11 +77,14 @@ export default async function CotizacionesPage({
   }
 
   const role = access.role || "invitado";
+  const normalizedRole = role.trim().toLowerCase();
 
   const canViewSalePrice =
-    role === "admin" || role === "vendedor" || role === "invitado";
+    normalizedRole === "admin" ||
+    normalizedRole === "vendedor" ||
+    normalizedRole === "invitado";
 
-  const canViewAllQuotes = role === "admin";
+  const canViewAllQuotes = normalizedRole === "admin";
 
   const { data: quoteRows, error } = await supabase
     .from("quotes")
@@ -209,29 +211,33 @@ function normalizeQuote(
 ): NormalizedQuote {
   const id = getString(row, ["id", "quote_id"]);
 
-  const form = getNestedRecord(row, ["form", "quote_form", "form_data"]);
-  const result = getNestedRecord(row, [
-    "result",
-    "quote_result",
-    "calculation_result",
-  ]);
+  const form =
+    getNestedRecord(row, ["form", "quote_form", "form_data"]) ?? {};
+
+  const result =
+    getNestedRecord(row, [
+      "result",
+      "quote_result",
+      "calculation_result",
+      "result_data",
+    ]) ?? {};
 
   const payload = getNestedRecord(row, ["payload", "data"]);
-
   const payloadForm = getRecord(payload?.form);
   const payloadResult = getRecord(payload?.result);
 
-  const safeForm = form ?? payloadForm ?? {};
-  const safeResult = result ?? payloadResult ?? {};
+  const safeForm = Object.keys(form).length > 0 ? form : payloadForm ?? {};
+  const safeResult =
+    Object.keys(result).length > 0 ? result : payloadResult ?? {};
 
-  const costos = getRecord(safeResult.costos);
+  const costos = getRecord(safeResult.costos) ?? {};
 
   const quoteNumber =
     getString(row, ["quote_number", "quoteNumber", "folio", "number"]) ||
     `COT-${id.slice(0, 8).toUpperCase()}`;
 
   const cliente =
-    getString(row, ["customer_name", "client_name", "cliente", "customer"]) ||
+    getString(row, ["client_name", "customer_name", "cliente", "customer"]) ||
     getString(safeForm, ["cliente", "customer_name", "client_name"]) ||
     "Sin cliente";
 
@@ -247,26 +253,33 @@ function normalizeQuote(
   const statusRaw =
     getString(row, ["status", "estado"]) ||
     getString(safeForm, ["status", "estado"]) ||
-    "borrador";
+    "BORRADOR";
 
   const status = normalizeStatus(statusRaw);
 
   const totalConIva =
     getNumber(row, [
+      "total_with_tax",
       "total_con_iva",
       "totalConIva",
       "total_with_iva",
       "total",
       "amount",
     ]) ||
-    getNumber(costos, ["totalConIva", "total_con_iva", "total"]);
+    getNumber(costos, [
+      "totalConIva",
+      "total_con_iva",
+      "total_with_tax",
+      "total",
+    ]);
 
   const precioSinIva =
-    getNumber(row, ["precio_sin_iva", "precioSinIva", "subtotal"]) ||
-    getNumber(costos, ["precioSinIva", "precio_sin_iva", "subtotal"]);
+    getNumber(row, ["price_without_tax", "precio_sin_iva", "precioSinIva"]) ||
+    getNumber(costos, ["precioSinIva", "precio_sin_iva", "price_without_tax"]);
 
   const iva =
-    getNumber(row, ["iva", "tax"]) || getNumber(costos, ["iva", "tax"]);
+    getNumber(row, ["tax_amount", "iva", "tax"]) ||
+    getNumber(costos, ["iva", "tax", "tax_amount"]);
 
   const createdAt =
     getString(row, ["created_at", "createdAt", "date"]) || "";
@@ -282,11 +295,12 @@ function normalizeQuote(
       "createdByEmail",
       "seller_email",
     ]) ||
+    getString(row, ["seller_name", "seller", "vendedor"]) ||
     getString(safeForm, ["vendedor", "seller", "email"]) ||
     "Sin usuario";
 
   const ownerCandidates = [
-    getString(row, ["created_by", "created_by_id", "user_id", "owner_id"]),
+    getString(row, ["user_id", "created_by", "created_by_id", "owner_id"]),
     getString(row, ["created_by_email", "user_email", "email"]),
     getString(safeForm, ["user_id", "created_by"]),
     getString(safeForm, ["email", "vendedor"]),
@@ -404,13 +418,15 @@ function StatsGrid({
   const borrador = quotes.filter((q) => q.status === "borrador").length;
   const aprobada = quotes.filter((q) => q.status === "aprobada").length;
   const produccion = quotes.filter((q) => q.status === "produccion").length;
+  const cancelada = quotes.filter((q) => q.status === "cancelada").length;
   const total = quotes.reduce((sum, quote) => sum + quote.totalConIva, 0);
 
   return (
-    <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
       <StatCard title="Borrador" value={`${borrador}`} />
       <StatCard title="Aprobadas" value={`${aprobada}`} />
       <StatCard title="Producción" value={`${produccion}`} />
+      <StatCard title="Canceladas" value={`${cancelada}`} />
       <StatCard
         title="Total cotizado"
         value={canViewSalePrice ? money(total) : "Oculto"}
@@ -639,7 +655,10 @@ function getNestedRecord(
   return null;
 }
 
-function getString(row: Record<string, unknown> | null | undefined, keys: string[]) {
+function getString(
+  row: Record<string, unknown> | null | undefined,
+  keys: string[]
+) {
   if (!row) return "";
 
   for (const key of keys) {
@@ -655,7 +674,10 @@ function getString(row: Record<string, unknown> | null | undefined, keys: string
   return "";
 }
 
-function getNumber(row: Record<string, unknown> | null | undefined, keys: string[]) {
+function getNumber(
+  row: Record<string, unknown> | null | undefined,
+  keys: string[]
+) {
   if (!row) return 0;
 
   for (const key of keys) {
@@ -687,6 +709,7 @@ function normalizeStatus(status: string) {
   if (clean === "rejected") return "rechazada";
   if (clean === "production") return "produccion";
   if (clean === "finished") return "terminada";
+  if (clean === "cancelled" || clean === "canceled") return "cancelada";
 
   if (
     [
@@ -696,6 +719,7 @@ function normalizeStatus(status: string) {
       "rechazada",
       "produccion",
       "terminada",
+      "cancelada",
     ].includes(clean)
   ) {
     return clean;
@@ -713,6 +737,7 @@ function getStatusLabel(status: string) {
     rechazada: "Rechazada",
     produccion: "Producción",
     terminada: "Terminada",
+    cancelada: "Cancelada",
   };
 
   return labels[status] ?? status;
@@ -751,6 +776,10 @@ function getStatusMeta(status: string) {
     terminada: {
       label: "Terminada",
       className: "border-purple-500/40 bg-purple-500/10 text-purple-200",
+    },
+    cancelada: {
+      label: "Cancelada",
+      className: "border-red-700/40 bg-red-700/10 text-red-300",
     },
   };
 
