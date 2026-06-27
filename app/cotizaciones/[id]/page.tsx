@@ -5,6 +5,7 @@ import { createClient } from "@/utils/supabase/server";
 import CopyQuoteText from "./CopyQuoteText";
 import StatusActions from "./StatusActions";
 import DuplicateQuoteButton from "./DuplicateQuoteButton";
+import PrintQuoteButton from "./PrintQuoteButton";
 import { duplicateQuote, updateQuoteStatus } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -146,238 +147,250 @@ export default async function CotizacionDetallePage({
   const statusMeta = getStatusMeta(quote.status);
 
   return (
-    <main className="min-h-screen bg-neutral-950 px-4 py-8 text-white sm:px-6 lg:px-8">
-      <div className="mx-auto w-full max-w-7xl space-y-6">
-        <section className="overflow-hidden rounded-3xl border border-neutral-800 bg-gradient-to-br from-neutral-900 via-neutral-900 to-yellow-500/10 shadow-2xl shadow-black/20">
-          <div className="grid gap-6 p-5 md:p-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full border border-yellow-400/40 bg-yellow-400/10 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-yellow-300">
-                  {quote.quoteNumber}
-                </span>
+    <>
+      <PrintStyles />
 
-                <span
-                  className={`rounded-full border px-3 py-1 text-xs font-black uppercase tracking-wide ${statusMeta.className}`}
+      <PrintableQuote quote={quote} canViewSalePrice={canViewSalePrice} />
+
+      <main className="no-print min-h-screen bg-neutral-950 px-4 py-8 text-white sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-7xl space-y-6">
+          <section className="overflow-hidden rounded-3xl border border-neutral-800 bg-gradient-to-br from-neutral-900 via-neutral-900 to-yellow-500/10 shadow-2xl shadow-black/20">
+            <div className="grid gap-6 p-5 md:p-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full border border-yellow-400/40 bg-yellow-400/10 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-yellow-300">
+                    {quote.quoteNumber}
+                  </span>
+
+                  <span
+                    className={`rounded-full border px-3 py-1 text-xs font-black uppercase tracking-wide ${statusMeta.className}`}
+                  >
+                    {statusMeta.label}
+                  </span>
+
+                  <span className="rounded-full border border-neutral-700 bg-neutral-950 px-3 py-1 text-xs font-bold uppercase text-neutral-300">
+                    Rol: {role}
+                  </span>
+                </div>
+
+                <h1 className="mt-4 break-words text-3xl font-black tracking-tight text-white md:text-4xl">
+                  Detalle de cotización
+                </h1>
+
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-400">
+                  Consulta el resumen comercial, texto para cliente, materiales
+                  calculados y acciones disponibles para esta cotización.
+                </p>
+
+                <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <InfoCard title="Cliente" value={quote.cliente} />
+                  <InfoCard title="Proyecto" value={quote.proyecto} />
+                  <InfoCard title="Fecha" value={formatDate(quote.createdAt)} />
+                  <InfoCard title="Guardó" value={quote.createdBy} />
+                </div>
+              </div>
+
+              <div className="rounded-3xl border border-neutral-800 bg-neutral-950 p-5 lg:w-72">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-neutral-500">
+                  Total con IVA
+                </p>
+
+                <p className="mt-2 break-words text-3xl font-black text-white">
+                  {canViewSalePrice
+                    ? money(quote.costos.totalConIva)
+                    : "Oculto"}
+                </p>
+
+                <p className="mt-1 text-xs text-neutral-500">
+                  {canViewSalePrice
+                    ? "Importe visible para este rol"
+                    : "Sin permiso de precio"}
+                </p>
+
+                <Link
+                  href="/cotizaciones"
+                  className="mt-5 inline-flex w-full justify-center rounded-2xl border border-neutral-700 bg-neutral-900 px-4 py-3 text-sm font-black uppercase tracking-wide text-neutral-200 transition hover:border-yellow-400 hover:text-yellow-300"
                 >
-                  {statusMeta.label}
-                </span>
-
-                <span className="rounded-full border border-neutral-700 bg-neutral-950 px-3 py-1 text-xs font-bold uppercase text-neutral-300">
-                  Rol: {role}
-                </span>
-              </div>
-
-              <h1 className="mt-4 break-words text-3xl font-black tracking-tight text-white md:text-4xl">
-                Detalle de cotización
-              </h1>
-
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-400">
-                Consulta el resumen comercial, texto para cliente, materiales
-                calculados y acciones disponibles para esta cotización.
-              </p>
-
-              <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <InfoCard title="Cliente" value={quote.cliente} />
-                <InfoCard title="Proyecto" value={quote.proyecto} />
-                <InfoCard title="Fecha" value={formatDate(quote.createdAt)} />
-                <InfoCard title="Guardó" value={quote.createdBy} />
+                  Volver
+                </Link>
               </div>
             </div>
+          </section>
 
-            <div className="rounded-3xl border border-neutral-800 bg-neutral-950 p-5 lg:w-72">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-neutral-500">
-                Total con IVA
-              </p>
-
-              <p className="mt-2 break-words text-3xl font-black text-white">
-                {canViewSalePrice ? money(quote.costos.totalConIva) : "Oculto"}
-              </p>
-
-              <p className="mt-1 text-xs text-neutral-500">
-                {canViewSalePrice
-                  ? "Importe visible para este rol"
-                  : "Sin permiso de precio"}
-              </p>
-
-              <Link
-                href="/cotizaciones"
-                className="mt-5 inline-flex w-full justify-center rounded-2xl border border-neutral-700 bg-neutral-900 px-4 py-3 text-sm font-black uppercase tracking-wide text-neutral-200 transition hover:border-yellow-400 hover:text-yellow-300"
-              >
-                Volver
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
-          <div className="min-w-0 space-y-6">
-            <PanelCard
-              eyebrow="Texto"
-              title="Cotización para cliente"
-              description="Texto generado listo para copiar y enviar."
-            >
-              <div className="rounded-3xl border border-neutral-800 bg-neutral-950 p-4">
-                <p className="whitespace-pre-wrap break-words text-sm leading-7 text-neutral-200">
-                  {quote.textoCotizacion ||
-                    "No se encontró texto de cotización."}
-                </p>
-              </div>
-
-              {quote.textoCotizacion && (
-                <div className="mt-4">
-                  <CopyQuoteText text={quote.textoCotizacion} />
-                </div>
-              )}
-            </PanelCard>
-
-            <PanelCard
-              eyebrow="Proyecto"
-              title="Configuración capturada"
-              description="Datos principales guardados en el formulario."
-            >
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                <InfoCard
-                  title="Tipo de caja"
-                  value={getDisplay(quote.form.tipoCaja)}
-                />
-                <InfoCard
-                  title="Carátula"
-                  value={getDisplay(quote.form.caratula)}
-                />
-                <InfoCard
-                  title="Iluminación"
-                  value={getDisplay(quote.form.iluminacion)}
-                />
-                <InfoCard
-                  title="Ancho"
-                  value={`${getDisplay(quote.form.anchoM)} m`}
-                />
-                <InfoCard
-                  title="Alto"
-                  value={`${getDisplay(quote.form.altoM)} m`}
-                />
-                <InfoCard
-                  title="Cantidad"
-                  value={getDisplay(quote.form.cantidad)}
-                />
-                <InfoCard
-                  title="Instalación"
-                  value={getDisplay(quote.form.incluyeInstalacion)}
-                />
-                <InfoCard
-                  title="Condición"
-                  value={getDisplay(quote.form.alturaCondicion)}
-                />
-                <InfoCard
-                  title="Traslado"
-                  value={getDisplay(quote.form.traslado)}
-                />
-                <InfoCard
-                  title="Diseño"
-                  value={getDisplay(quote.form.disenoGrafico)}
-                />
-                <InfoCard title="Vendedor" value={quote.vendedor} />
-                <InfoCard
-                  title="Estado"
-                  value={getStatusMeta(quote.status).label}
-                />
-              </div>
-            </PanelCard>
-
-            {canViewProductionMaterials && (
+          <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+            <div className="min-w-0 space-y-6">
               <PanelCard
-                eyebrow={canViewProductPrices ? "Costos internos" : "Producción"}
-                title={
-                  canViewProductPrices
-                    ? "Detalle de costos internos"
-                    : "Detalle de materiales para producción"
-                }
-                description={
-                  canViewProductPrices
-                    ? "Materiales, cantidades, costos unitarios y totales."
-                    : "Materiales, SKUs y cantidades sin precios."
-                }
+                eyebrow="Texto"
+                title="Cotización para cliente"
+                description="Texto generado listo para copiar y enviar."
               >
-                <div className="w-full overflow-x-auto">
-                  {quote.partidas.length > 0 ? (
-                    canViewProductPrices ? (
-                      <InternalCostTable partidas={quote.partidas} />
-                    ) : (
-                      <ProductionMaterialTable partidas={quote.partidas} />
-                    )
-                  ) : (
-                    <p className="rounded-2xl border border-neutral-800 bg-neutral-950 p-4 text-sm text-neutral-400">
-                      No se encontraron partidas de materiales en esta
-                      cotización.
-                    </p>
-                  )}
+                <div className="rounded-3xl border border-neutral-800 bg-neutral-950 p-4">
+                  <p className="whitespace-pre-wrap break-words text-sm leading-7 text-neutral-200">
+                    {quote.textoCotizacion ||
+                      "No se encontró texto de cotización."}
+                  </p>
                 </div>
-              </PanelCard>
-            )}
 
-            {!canViewProductionMaterials && (
-              <section className="rounded-3xl border border-yellow-500/30 bg-yellow-500/10 p-5">
-                <p className="text-sm font-semibold leading-6 text-yellow-100">
-                  Tu rol no tiene permiso para ver materiales, SKUs, cantidades
-                  ni precios internos.
-                </p>
-              </section>
-            )}
-          </div>
-
-          <aside className="min-w-0">
-            <div className="space-y-5 lg:sticky lg:top-6">
-              <SummaryCard
-                quote={quote}
-                canViewSalePrice={canViewSalePrice}
-                canViewInternalCosts={canViewInternalCosts}
-                canViewUtility={canViewUtility}
-              />
-
-              <TechnicalCard quote={quote} />
-
-              <PanelCard
-                eyebrow="Acciones"
-                title="Opciones"
-                description="Acciones disponibles para esta cotización."
-              >
-                <div className="grid gap-4">
-                  <StatusActions
-                    quoteId={quote.id}
-                    currentStatus={quote.status}
-                    role={role}
-                    canChange={canChangeStatus}
-                    updateAction={updateQuoteStatus}
-                  />
-
-                  <DuplicateQuoteButton
-                    quoteId={quote.id}
-                    canDuplicate={canDuplicate}
-                    duplicateAction={duplicateQuote}
-                  />
-
-                  <div className="grid gap-3">
-                    <Link
-                      href="/cotizaciones"
-                      className="rounded-2xl border border-neutral-700 bg-neutral-950 px-5 py-3 text-center text-sm font-black uppercase tracking-wide text-neutral-200 transition hover:border-yellow-400 hover:text-yellow-300"
-                    >
-                      Regresar al historial
-                    </Link>
-
-                    <Link
-                      href="/cotizadores/cajas-luz"
-                      className="rounded-2xl bg-yellow-400 px-5 py-3 text-center text-sm font-black uppercase tracking-wide text-neutral-950 transition hover:bg-yellow-300"
-                    >
-                      Nueva cotización
-                    </Link>
+                {quote.textoCotizacion && (
+                  <div className="mt-4">
+                    <CopyQuoteText text={quote.textoCotizacion} />
                   </div>
+                )}
+              </PanelCard>
+
+              <PanelCard
+                eyebrow="Proyecto"
+                title="Configuración capturada"
+                description="Datos principales guardados en el formulario."
+              >
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  <InfoCard
+                    title="Tipo de caja"
+                    value={getDisplay(quote.form.tipoCaja)}
+                  />
+                  <InfoCard
+                    title="Carátula"
+                    value={getDisplay(quote.form.caratula)}
+                  />
+                  <InfoCard
+                    title="Iluminación"
+                    value={getDisplay(quote.form.iluminacion)}
+                  />
+                  <InfoCard
+                    title="Ancho"
+                    value={`${getDisplay(quote.form.anchoM)} m`}
+                  />
+                  <InfoCard
+                    title="Alto"
+                    value={`${getDisplay(quote.form.altoM)} m`}
+                  />
+                  <InfoCard
+                    title="Cantidad"
+                    value={getDisplay(quote.form.cantidad)}
+                  />
+                  <InfoCard
+                    title="Instalación"
+                    value={getDisplay(quote.form.incluyeInstalacion)}
+                  />
+                  <InfoCard
+                    title="Condición"
+                    value={getDisplay(quote.form.alturaCondicion)}
+                  />
+                  <InfoCard
+                    title="Traslado"
+                    value={getDisplay(quote.form.traslado)}
+                  />
+                  <InfoCard
+                    title="Diseño"
+                    value={getDisplay(quote.form.disenoGrafico)}
+                  />
+                  <InfoCard title="Vendedor" value={quote.vendedor} />
+                  <InfoCard
+                    title="Estado"
+                    value={getStatusMeta(quote.status).label}
+                  />
                 </div>
               </PanelCard>
+
+              {canViewProductionMaterials && (
+                <PanelCard
+                  eyebrow={
+                    canViewProductPrices ? "Costos internos" : "Producción"
+                  }
+                  title={
+                    canViewProductPrices
+                      ? "Detalle de costos internos"
+                      : "Detalle de materiales para producción"
+                  }
+                  description={
+                    canViewProductPrices
+                      ? "Materiales, cantidades, costos unitarios y totales."
+                      : "Materiales, SKUs y cantidades sin precios."
+                  }
+                >
+                  <div className="w-full overflow-x-auto">
+                    {quote.partidas.length > 0 ? (
+                      canViewProductPrices ? (
+                        <InternalCostTable partidas={quote.partidas} />
+                      ) : (
+                        <ProductionMaterialTable partidas={quote.partidas} />
+                      )
+                    ) : (
+                      <p className="rounded-2xl border border-neutral-800 bg-neutral-950 p-4 text-sm text-neutral-400">
+                        No se encontraron partidas de materiales en esta
+                        cotización.
+                      </p>
+                    )}
+                  </div>
+                </PanelCard>
+              )}
+
+              {!canViewProductionMaterials && (
+                <section className="rounded-3xl border border-yellow-500/30 bg-yellow-500/10 p-5">
+                  <p className="text-sm font-semibold leading-6 text-yellow-100">
+                    Tu rol no tiene permiso para ver materiales, SKUs,
+                    cantidades ni precios internos.
+                  </p>
+                </section>
+              )}
             </div>
-          </aside>
-        </section>
-      </div>
-    </main>
+
+            <aside className="min-w-0">
+              <div className="space-y-5 lg:sticky lg:top-6">
+                <SummaryCard
+                  quote={quote}
+                  canViewSalePrice={canViewSalePrice}
+                  canViewInternalCosts={canViewInternalCosts}
+                  canViewUtility={canViewUtility}
+                />
+
+                <TechnicalCard quote={quote} />
+
+                <PanelCard
+                  eyebrow="Acciones"
+                  title="Opciones"
+                  description="Acciones disponibles para esta cotización."
+                >
+                  <div className="grid gap-4">
+                    <StatusActions
+                      quoteId={quote.id}
+                      currentStatus={quote.status}
+                      role={role}
+                      canChange={canChangeStatus}
+                      updateAction={updateQuoteStatus}
+                    />
+
+                    <DuplicateQuoteButton
+                      quoteId={quote.id}
+                      canDuplicate={canDuplicate}
+                      duplicateAction={duplicateQuote}
+                    />
+
+                    <div className="grid gap-3">
+                      <PrintQuoteButton />
+
+                      <Link
+                        href="/cotizaciones"
+                        className="rounded-2xl border border-neutral-700 bg-neutral-950 px-5 py-3 text-center text-sm font-black uppercase tracking-wide text-neutral-200 transition hover:border-yellow-400 hover:text-yellow-300"
+                      >
+                        Regresar al historial
+                      </Link>
+
+                      <Link
+                        href="/cotizadores/cajas-luz"
+                        className="rounded-2xl bg-yellow-400 px-5 py-3 text-center text-sm font-black uppercase tracking-wide text-neutral-950 transition hover:bg-yellow-300"
+                      >
+                        Nueva cotización
+                      </Link>
+                    </div>
+                  </div>
+                </PanelCard>
+              </div>
+            </aside>
+          </section>
+        </div>
+      </main>
+    </>
   );
 }
 
@@ -598,6 +611,229 @@ function normalizePartidas(items: unknown[]): MaterialLine[] {
   }
 
   return partidas;
+}
+
+function PrintStyles() {
+  return (
+    <style
+      dangerouslySetInnerHTML={{
+        __html: `
+          @media screen {
+            .print-area {
+              display: none !important;
+            }
+          }
+
+          @media print {
+            @page {
+              size: letter;
+              margin: 14mm;
+            }
+
+            html,
+            body {
+              background: white !important;
+              color: black !important;
+            }
+
+            .no-print {
+              display: none !important;
+            }
+
+            .print-area {
+              display: block !important;
+              color: #111 !important;
+              font-family: Arial, Helvetica, sans-serif !important;
+            }
+
+            .print-card {
+              border: 1px solid #ddd !important;
+              border-radius: 12px !important;
+              padding: 16px !important;
+              margin-bottom: 14px !important;
+            }
+
+            .print-title {
+              font-size: 24px !important;
+              font-weight: 900 !important;
+              margin: 0 !important;
+            }
+
+            .print-subtitle {
+              font-size: 12px !important;
+              color: #555 !important;
+              margin-top: 4px !important;
+            }
+
+            .print-grid {
+              display: grid !important;
+              grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+              gap: 10px !important;
+            }
+
+            .print-label {
+              font-size: 10px !important;
+              text-transform: uppercase !important;
+              color: #666 !important;
+              letter-spacing: 0.08em !important;
+              margin: 0 0 3px 0 !important;
+            }
+
+            .print-value {
+              font-size: 13px !important;
+              font-weight: 700 !important;
+              color: #111 !important;
+              margin: 0 !important;
+            }
+
+            .print-total {
+              background: #111 !important;
+              color: white !important;
+              padding: 14px !important;
+              border-radius: 12px !important;
+              text-align: right !important;
+            }
+
+            .print-total small {
+              display: block !important;
+              font-size: 10px !important;
+              letter-spacing: 0.1em !important;
+              text-transform: uppercase !important;
+              opacity: 0.75 !important;
+            }
+
+            .print-total strong {
+              display: block !important;
+              font-size: 24px !important;
+              margin-top: 4px !important;
+            }
+          }
+        `,
+      }}
+    />
+  );
+}
+
+function PrintableQuote({
+  quote,
+  canViewSalePrice,
+}: {
+  quote: NormalizedQuote;
+  canViewSalePrice: boolean;
+}) {
+  return (
+    <div className="print-area">
+      <section className="print-card">
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 20,
+          }}
+        >
+          <div>
+            <p className="print-title">HOLLOW COTIZADORES</p>
+            <p className="print-subtitle">
+              COTIZACIÓN DE CAJA DE LUZ · {quote.quoteNumber}
+            </p>
+          </div>
+
+          <div style={{ textAlign: "right" }}>
+            <p className="print-label">Fecha</p>
+            <p className="print-value">{formatDate(quote.createdAt)}</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="print-card">
+        <div className="print-grid">
+          <PrintItem title="Cliente" value={quote.cliente} />
+          <PrintItem title="Proyecto" value={quote.proyecto} />
+          <PrintItem title="Vendedor" value={quote.vendedor} />
+          <PrintItem title="Estado" value={getStatusMeta(quote.status).label} />
+        </div>
+      </section>
+
+      <section className="print-card">
+        <p className="print-label">Descripción para cliente</p>
+        <p
+          style={{
+            marginTop: 8,
+            fontSize: 13,
+            lineHeight: 1.7,
+            whiteSpace: "pre-wrap",
+          }}
+        >
+          {quote.textoCotizacion || "Sin descripción registrada."}
+        </p>
+      </section>
+
+      <section className="print-card">
+        <div className="print-grid">
+          <PrintItem
+            title="Tipo de caja"
+            value={getDisplay(quote.form.tipoCaja)}
+          />
+          <PrintItem
+            title="Carátula"
+            value={getDisplay(quote.form.caratula)}
+          />
+          <PrintItem
+            title="Iluminación"
+            value={getDisplay(quote.form.iluminacion)}
+          />
+          <PrintItem
+            title="Medidas"
+            value={`${getDisplay(quote.form.anchoM)} m x ${getDisplay(
+              quote.form.altoM
+            )} m`}
+          />
+          <PrintItem
+            title="Instalación"
+            value={getDisplay(quote.form.incluyeInstalacion)}
+          />
+          <PrintItem
+            title="Traslado"
+            value={getDisplay(quote.form.traslado)}
+          />
+        </div>
+      </section>
+
+      {canViewSalePrice && (
+        <section className="print-card">
+          <div className="print-grid">
+            <PrintItem
+              title="Precio sin IVA"
+              value={money(quote.costos.precioSinIva)}
+            />
+            <PrintItem title="IVA" value={money(quote.costos.iva)} />
+          </div>
+
+          <div className="print-total" style={{ marginTop: 14 }}>
+            <small>Total con IVA</small>
+            <strong>{money(quote.costos.totalConIva)}</strong>
+          </div>
+        </section>
+      )}
+
+      <section style={{ marginTop: 28, fontSize: 11, color: "#555" }}>
+        <p>
+          Esta cotización fue generada desde Hollow Cotizadores. Los precios y
+          condiciones pueden estar sujetos a revisión según alcance final del
+          proyecto.
+        </p>
+      </section>
+    </div>
+  );
+}
+
+function PrintItem({ title, value }: { title: string; value: string }) {
+  return (
+    <div>
+      <p className="print-label">{title}</p>
+      <p className="print-value">{value || "—"}</p>
+    </div>
+  );
 }
 
 function PanelCard({
