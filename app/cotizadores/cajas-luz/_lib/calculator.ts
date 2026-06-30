@@ -52,6 +52,59 @@ function cleanText(value: string) {
   return value.replace(/\s+/g, " ").trim();
 }
 
+function normalizeCaratula(value: string) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toUpperCase();
+}
+
+function isCaratulaLonaImpresa(value: string) {
+  const text = normalizeCaratula(value);
+
+  const isLona =
+    text.includes("LONA") ||
+    text.includes("BACK") ||
+    text.includes("BACKLIGHT") ||
+    text.includes("BACK LIGHT");
+
+  const isImpresa =
+    text.includes("IMPRESA") ||
+    text.includes("IMPRESION") ||
+    text.includes("IMPRESO") ||
+    text.includes("IMPRESA HP") ||
+    text.includes("ALTA RESOLUCION");
+
+  const isVinilCorte =
+    text.includes("VINIL DE CORTE") ||
+    text.includes("VINIL CORTE") ||
+    text.includes("ROTULADA") ||
+    text.includes("ROTULADO") ||
+    text.includes("CORTE");
+
+  return isLona && isImpresa && !isVinilCorte;
+}
+
+function isCaratulaLonaRotulada(value: string) {
+  const text = normalizeCaratula(value);
+
+  const isLona =
+    text.includes("LONA") ||
+    text.includes("BACK") ||
+    text.includes("BACKLIGHT") ||
+    text.includes("BACK LIGHT");
+
+  const isRotulada =
+    text.includes("ROTULADA") ||
+    text.includes("ROTULADO") ||
+    text.includes("VINIL DE CORTE") ||
+    text.includes("VINIL CORTE") ||
+    text.includes("CORTE");
+
+  return isLona && isRotulada;
+}
+
 function getInstallationRuleFromCatalog({
   alturaCondicion,
   installationConditions,
@@ -267,26 +320,24 @@ function addCaratulaLines({
   costMap: Map<string, number>;
   areaFrenteM2: number;
 }) {
+  const caratula = String(form.caratula ?? "");
+
   /*
-    REGLA CAJAS DE LUZ — CARÁTULA LONA BACK
+    REGLA CAJAS DE LUZ — LONA BACK
 
-    1. Lona backlight impresa:
-       - Solo cobra lona backlight impresa.
-       - NO cobra lona blanca/backlight aparte.
-       - NO cobra vinil de corte.
+    Lona backlight impresa:
+    - SOLO cobra IMPRESION_LONA_HP.
+    - NO cobra LONA_BACKLIGHT aparte.
+    - NO cobra vinil de corte.
 
-    2. Lona backlight rotulada:
-       - Cobra lona backlight blanca/sin impresión.
-       - Cobra vinil de corte.
-       - Cobra mano de obra de rotulado.
-       - NO cobra impresión.
-
-    IMPORTANTE:
-    El SKU IMPRESION_LONA_HP debe tener en catálogo el costo completo
-    de la lona backlight impresa, no solo la tinta.
+    Lona backlight rotulada / vinil de corte:
+    - Cobra LONA_BACKLIGHT blanca/sin impresión.
+    - Cobra VINIL_CORTE_COLOR_ML.
+    - Cobra ROTULADO_VINIL.
+    - NO cobra impresión.
   */
 
-  if (form.caratula === "Lona backlight impresa") {
+  if (isCaratulaLonaImpresa(caratula)) {
     addLine({
       lines,
       grupo: "Carátula",
@@ -300,7 +351,7 @@ function addCaratulaLines({
     return;
   }
 
-  if (form.caratula === "Lona backlight rotulada") {
+  if (isCaratulaLonaRotulada(caratula)) {
     const mlVinilTotal =
       MAX_COLORES_VINIL_ROTULADO * ML_VINIL_POR_COLOR_ROTULADO;
 
@@ -1286,7 +1337,7 @@ export function calculateCajaLuz(
         ? "REVISAR MANO DE OBRA INSTALACIÓN"
         : "PRECIOS ESPECIALES COMPLETOS",
     impresion:
-      form.caratula === "Lona backlight impresa" ||
+      isCaratulaLonaImpresa(form.caratula) ||
       form.caratula === "Acrílico rotulado con impresión de vinil"
         ? "IMPRESIÓN CONFIGURADA"
         : "NO REQUIERE IMPRESIÓN",
