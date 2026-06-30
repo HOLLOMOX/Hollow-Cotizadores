@@ -267,21 +267,30 @@ function addCaratulaLines({
   costMap: Map<string, number>;
   areaFrenteM2: number;
 }) {
+  /*
+    REGLA CAJAS DE LUZ — CARÁTULA LONA BACK
+
+    1. Lona backlight impresa:
+       - Solo cobra lona backlight impresa.
+       - NO cobra lona blanca/backlight aparte.
+       - NO cobra vinil de corte.
+
+    2. Lona backlight rotulada:
+       - Cobra lona backlight blanca/sin impresión.
+       - Cobra vinil de corte.
+       - Cobra mano de obra de rotulado.
+       - NO cobra impresión.
+
+    IMPORTANTE:
+    El SKU IMPRESION_LONA_HP debe tener en catálogo el costo completo
+    de la lona backlight impresa, no solo la tinta.
+  */
+
   if (form.caratula === "Lona backlight impresa") {
     addLine({
       lines,
       grupo: "Carátula",
-      concepto: "Lona backlight",
-      sku: "LONA_BACKLIGHT",
-      cantidad: areaFrenteM2,
-      unidad: "m²",
-      costoUnitario: cost(costMap, "LONA_BACKLIGHT"),
-    });
-
-    addLine({
-      lines,
-      grupo: "Carátula",
-      concepto: "Impresión lona backlight alta resolución HP",
+      concepto: "Lona backlight impresa alta resolución HP",
       sku: "IMPRESION_LONA_HP",
       cantidad: areaFrenteM2,
       unidad: "m²",
@@ -298,7 +307,7 @@ function addCaratulaLines({
     addLine({
       lines,
       grupo: "Carátula",
-      concepto: "Lona backlight",
+      concepto: "Lona backlight blanca / sin impresión para rotulado",
       sku: "LONA_BACKLIGHT",
       cantidad: areaFrenteM2,
       unidad: "m²",
