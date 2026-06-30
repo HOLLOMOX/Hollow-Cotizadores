@@ -588,11 +588,17 @@ function addHerrajesConsumiblesLines({
   }
 
   if (form.iluminacion !== "Sin iluminación") {
-    const cable14Ml = Math.ceil(perimetroMl + 2);
+    /*
+      REGLA ELÉCTRICA CAJA 1X1 CON LÁMPARAS LED:
+      - 4 lámparas = 4 ML de cable calibre 18
+      - Perímetro 4 ML x 2 = 8 ML de cable 14 dúplex
+    */
+
+    const cable14Ml = Math.ceil(perimetroMl * 2);
 
     const cable18Ml =
       iluminacionUnidad === "PIEZA"
-        ? Math.ceil(iluminacionCantidad * 0.5)
+        ? Math.ceil(iluminacionCantidad * 1)
         : Math.ceil(iluminacionCantidad * 0.3);
 
     addLine({
@@ -614,6 +620,16 @@ function addHerrajesConsumiblesLines({
       unidad: "ML",
       costoUnitario: cost(costMap, "CABLE_18"),
     });
+
+    addLine({
+      lines,
+      grupo: "Eléctrico",
+      concepto: "Cinta de aislar 3M Temflex",
+      sku: "CINTA_AISLAR_3M_TEMFLEX",
+      cantidad: 0.5,
+      unidad: "PIEZA",
+      costoUnitario: cost(costMap, "CINTA_AISLAR_3M_TEMFLEX"),
+    });
   }
 
   const lijas = Math.max(1, Math.ceil(areaTotalLaminaM2 / RENDIMIENTO_LIJA_M2));
@@ -624,11 +640,6 @@ function addHerrajesConsumiblesLines({
   );
 
   const estopaKg = Math.max(0.25, thinnerLitros * 0.25);
-
-  const primerLitros = Math.max(
-    1,
-    Math.ceil(areaTotalLaminaM2 / RENDIMIENTO_PRIMER_M2_POR_LITRO)
-  );
 
   const pinturaLitros = Math.max(
     1,
@@ -643,6 +654,26 @@ function addHerrajesConsumiblesLines({
     cantidad: lijas,
     unidad: "PIEZA",
     costoUnitario: cost(costMap, "LIJA_100_120"),
+  });
+
+  addLine({
+    lines,
+    grupo: "Acabado",
+    concepto: "Disco de corte metal",
+    sku: "DISCO_CORTE_METAL",
+    cantidad: 1,
+    unidad: "PIEZA",
+    costoUnitario: cost(costMap, "DISCO_CORTE_METAL"),
+  });
+
+  addLine({
+    lines,
+    grupo: "Acabado",
+    concepto: "Disco laminado de lija",
+    sku: "DISCO_LAMINADO_LIJA",
+    cantidad: 1,
+    unidad: "PIEZA",
+    costoUnitario: cost(costMap, "DISCO_LAMINADO_LIJA"),
   });
 
   addLine({
@@ -665,15 +696,12 @@ function addHerrajesConsumiblesLines({
     costoUnitario: cost(costMap, "ESTOPA"),
   });
 
-  addLine({
-    lines,
-    grupo: "Acabado",
-    concepto: "Primer anticorrosivo",
-    sku: "PRIMER_ANTICORROSIVO",
-    cantidad: primerLitros,
-    unidad: "LITRO",
-    costoUnitario: cost(costMap, "PRIMER_ANTICORROSIVO"),
-  });
+  /*
+    Primer anticorrosivo:
+    Ya no se agrega automático en caja de luz galvanizada/zintro.
+    Si después quieres, lo agregamos como selector:
+    "¿Requiere primer? Sí/No"
+  */
 
   addLine({
     lines,
