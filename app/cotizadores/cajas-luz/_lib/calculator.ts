@@ -28,8 +28,7 @@ const ML_VINIL_POR_COLOR_ROTULADO = 1;
 
 const TIRAS_POR_TUBO_GUNTHER = 2;
 
-const SEPARACION_PIJA_RECTA_M = 0.15;
-const SEPARACION_PIJA_SUAJADA_M = 0.1;
+const PIJAS_TEK_POR_ML_CANTO = 40;
 
 const RENDIMIENTO_LIJA_M2 = 4;
 const RENDIMIENTO_THINNER_M2_POR_LITRO = 10;
@@ -513,12 +512,7 @@ function addHerrajesConsumiblesLines({
   iluminacionCantidad: number;
   iluminacionUnidad: string;
 }) {
-  const separacionPija =
-    form.tipoCaja === "Suajada"
-      ? SEPARACION_PIJA_SUAJADA_M
-      : SEPARACION_PIJA_RECTA_M;
-
-  const pijasCanto = Math.ceil(perimetroMl / separacionPija);
+  const pijasCanto = Math.ceil(perimetroMl * PIJAS_TEK_POR_ML_CANTO);
 
   addLine({
     lines,
