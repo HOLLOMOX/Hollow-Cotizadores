@@ -28,16 +28,19 @@ const ML_VINIL_POR_COLOR_ROTULADO = 1;
 
 const TIRAS_POR_TUBO_GUNTHER = 2;
 
-const PIJAS_TEK_POR_ML_CANTO = 40;
-
 const RENDIMIENTO_LIJA_M2 = 4;
 const RENDIMIENTO_THINNER_M2_POR_LITRO = 10;
-const RENDIMIENTO_PRIMER_M2_POR_LITRO = 8;
 const RENDIMIENTO_PINTURA_M2_POR_LITRO = 8;
 
 const LAMINA_HOJA_UTIL_M2 = 2;
 const FRACCION_LAMINA = 0.25;
+
 const LAMPARAS_LED_POR_M2 = 4;
+
+const PIJAS_TEK_POR_ML_CANTO = 40;
+
+const LARGO_TUBULAR_M = 6;
+const FACTOR_TUBULAR_CAJA_LUZ = 2.5;
 
 function cost(costMap: Map<string, number>, sku: string) {
   return costMap.get(sku) ?? 0;
@@ -582,12 +585,6 @@ function addHerrajesConsumiblesLines({
   }
 
   if (form.iluminacion !== "Sin iluminación") {
-    /*
-      REGLA ELÉCTRICA CAJA 1X1 CON LÁMPARAS LED:
-      - 4 lámparas = 4 ML de cable calibre 18
-      - Perímetro 4 ML x 2 = 8 ML de cable 14 dúplex
-    */
-
     const cable14Ml = Math.ceil(perimetroMl * 2);
 
     const cable18Ml =
@@ -689,13 +686,6 @@ function addHerrajesConsumiblesLines({
     unidad: "KG",
     costoUnitario: cost(costMap, "ESTOPA"),
   });
-
-  /*
-    Primer anticorrosivo:
-    Ya no se agrega automático en caja de luz galvanizada/zintro.
-    Si después quieres, lo agregamos como selector:
-    "¿Requiere primer? Sí/No"
-  */
 
   addLine({
     lines,
@@ -910,14 +900,6 @@ function getInstallationHours({
 }) {
   if (incluyeInstalacion !== "SI") return 0;
 
-  /*
-    Caja 1x1:
-    2 horas reales x 2 personas = 4 horas-hombre.
-
-    El porcentaje extra por altura/condición se aplica después
-    sobre el costo base de instalación.
-  */
-
   if (areaFrenteM2 <= 1) return 2;
   if (areaFrenteM2 <= 3) return 3;
   if (areaFrenteM2 <= 6) return 4;
@@ -1062,8 +1044,8 @@ export function calculateCajaLuz(
   const refuerzoHorizontalMl = refuerzosHorizontalesPorCaja * anchoM * cantidad;
   const refuerzosMl = refuerzoVerticalMl + refuerzoHorizontalMl;
 
-  const tubularMl = perimetroMl + refuerzosMl;
-  const tramosTubular = Math.ceil(tubularMl / 6);
+  const tubularMl = perimetroMl * FACTOR_TUBULAR_CAJA_LUZ + refuerzosMl;
+  const tramosTubular = roundUpToQuarter(tubularMl / LARGO_TUBULAR_M);
 
   addLine({
     lines,
