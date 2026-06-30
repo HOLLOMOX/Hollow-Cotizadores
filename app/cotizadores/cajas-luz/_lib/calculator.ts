@@ -36,7 +36,7 @@ const RENDIMIENTO_THINNER_M2_POR_LITRO = 10;
 const RENDIMIENTO_PRIMER_M2_POR_LITRO = 8;
 const RENDIMIENTO_PINTURA_M2_POR_LITRO = 8;
 
-const LAMINA_HOJA_UTIL_M2 = 3;
+const LAMINA_HOJA_UTIL_M2 = 2;
 const FRACCION_LAMINA = 0.25;
 const LAMPARAS_LED_POR_M2 = 4;
 
@@ -860,9 +860,8 @@ function getSoldaduraKg({
 }) {
   const areaTotal = Math.max(areaBaseM2 * cantidad, 0);
 
-  if (areaTotal <= 1) return 0.25;
-  if (areaTotal <= 3) return 0.5;
-  if (areaTotal <= 6) return 0.75;
+  if (areaTotal <= 1) return 0.5;
+  if (areaTotal <= 3) return 0.75;
 
   return 1;
 }
@@ -889,7 +888,19 @@ function getInstallationHours({
 }) {
   if (incluyeInstalacion !== "SI") return 0;
 
-  return Math.ceil(Math.max(4, areaFrenteM2 * 1.5));
+  /*
+    Caja 1x1:
+    2 horas reales x 2 personas = 4 horas-hombre.
+
+    El porcentaje extra por altura/condición se aplica después
+    sobre el costo base de instalación.
+  */
+
+  if (areaFrenteM2 <= 1) return 2;
+  if (areaFrenteM2 <= 3) return 3;
+  if (areaFrenteM2 <= 6) return 4;
+
+  return Math.ceil(4 + (areaFrenteM2 - 6) * 0.75);
 }
 
 export function calculateCajaLuz(
@@ -1228,7 +1239,7 @@ export function calculateCajaLuz(
   addLine({
     lines,
     grupo: "Mano de obra",
-    concepto: "Mano de obra fabricación",
+    concepto: `Mano de obra fabricación (${personasFabricacion} personas x ${fabricacionHoras} h reales)`,
     sku: "MO_FABRICACION_HORA",
     cantidad: horasHombreFabricacion,
     unidad: "HORA-HOMBRE",
@@ -1251,7 +1262,7 @@ export function calculateCajaLuz(
     addLine({
       lines,
       grupo: "Mano de obra",
-      concepto: "Mano de obra instalación base",
+      concepto: `Mano de obra instalación base (${personasInstalacion} personas x ${instalacionHoras} h reales)`,
       sku: "MO_INSTALACION_HORA",
       cantidad: horasHombreInstalacion,
       unidad: "HORA-HOMBRE",
