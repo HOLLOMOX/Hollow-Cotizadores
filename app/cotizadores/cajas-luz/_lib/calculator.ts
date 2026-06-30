@@ -322,21 +322,6 @@ function addCaratulaLines({
 }) {
   const caratula = String(form.caratula ?? "");
 
-  /*
-    REGLA CAJAS DE LUZ — LONA BACK
-
-    Lona backlight impresa:
-    - SOLO cobra IMPRESION_LONA_HP.
-    - NO cobra LONA_BACKLIGHT aparte.
-    - NO cobra vinil de corte.
-
-    Lona backlight rotulada / vinil de corte:
-    - Cobra LONA_BACKLIGHT blanca/sin impresión.
-    - Cobra VINIL_CORTE_COLOR_ML.
-    - Cobra ROTULADO_VINIL.
-    - NO cobra impresión.
-  */
-
   if (isCaratulaLonaImpresa(caratula)) {
     addLine({
       lines,
@@ -835,6 +820,22 @@ function addSoportesInstalacionLines({
   }
 }
 
+function getSoldaduraKg({
+  areaBaseM2,
+  cantidad,
+}: {
+  areaBaseM2: number;
+  cantidad: number;
+}) {
+  const areaTotal = Math.max(areaBaseM2 * cantidad, 0);
+
+  if (areaTotal <= 1) return 0.25;
+  if (areaTotal <= 3) return 0.5;
+  if (areaTotal <= 6) return 0.75;
+
+  return 1;
+}
+
 function getPrecioState(margen: number) {
   if (margen >= 35) return "MARGEN SALUDABLE PARA NEGOCIAR";
   if (margen >= 25) return "MARGEN ACEPTABLE, REVISAR DESCUENTOS";
@@ -1012,18 +1013,19 @@ export function calculateCajaLuz(
     refuerzosVerticalesPorCaja * 2 * cantidad +
     refuerzosHorizontalesPorCaja * 2 * cantidad;
 
-  const varillasSoldadura = Math.ceil(
-    inserciones * tubular.varillaSoldaduraPorInsercion
-  );
+  const soldaduraKg = getSoldaduraKg({
+    areaBaseM2,
+    cantidad,
+  });
 
   addLine({
     lines,
     grupo: "Estructura",
-    concepto: "Soldadura 6013",
-    sku: "SOLDADURA_6013",
-    cantidad: varillasSoldadura,
-    unidad: "VARILLA",
-    costoUnitario: cost(costMap, "SOLDADURA_6013"),
+    concepto: "Soldadura 6013 por kilogramo",
+    sku: "SOLDADURA_6013_KG",
+    cantidad: soldaduraKg,
+    unidad: "KG",
+    costoUnitario: cost(costMap, "SOLDADURA_6013_KG"),
   });
 
   let iluminacionLabel = "Sin iluminación";
@@ -1410,7 +1412,7 @@ export function calculateCajaLuz(
       tramosTubular,
       refuerzosMl,
       inserciones,
-      varillasSoldadura,
+      varillasSoldadura: soldaduraKg,
     },
 
     iluminacion: {
