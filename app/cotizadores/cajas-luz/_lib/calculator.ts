@@ -36,6 +36,10 @@ const RENDIMIENTO_THINNER_M2_POR_LITRO = 10;
 const RENDIMIENTO_PRIMER_M2_POR_LITRO = 8;
 const RENDIMIENTO_PINTURA_M2_POR_LITRO = 8;
 
+const LAMINA_HOJA_UTIL_M2 = 3;
+const FRACCION_LAMINA = 0.25;
+const LAMPARAS_LED_POR_M2 = 4;
+
 function cost(costMap: Map<string, number>, sku: string) {
   return costMap.get(sku) ?? 0;
 }
@@ -307,6 +311,33 @@ function addLine({
     costoUnitario,
     total: cantidad * costoUnitario,
   });
+}
+
+function roundUpToQuarter(value: number) {
+  if (value <= 0) return 0;
+
+  return Math.ceil(value / FRACCION_LAMINA) * FRACCION_LAMINA;
+}
+
+function getLaminaPiezas(areaM2: number) {
+  if (areaM2 <= 0) return 0;
+
+  return roundUpToQuarter(areaM2 / LAMINA_HOJA_UTIL_M2);
+}
+
+function getLamparasLedCantidad({
+  areaBaseM2,
+  cantidad,
+}: {
+  areaBaseM2: number;
+  cantidad: number;
+}) {
+  const lamparasPorCaja = Math.max(
+    1,
+    Math.ceil(areaBaseM2 * LAMPARAS_LED_POR_M2)
+  );
+
+  return lamparasPorCaja * cantidad;
 }
 
 function addCaratulaLines({
@@ -963,13 +994,16 @@ export function calculateCajaLuz(
     areaFrenteM2,
   });
 
+  const laminaRespaldoPiezas = getLaminaPiezas(areaRespaldoM2);
+  const laminaCantoPiezas = getLaminaPiezas(areaCantoM2);
+
   addLine({
     lines,
     grupo: "Lámina",
     concepto: "Lámina respaldo galvanizada cal. 26",
     sku: "LAMINA_GALV_CAL26",
-    cantidad: areaRespaldoM2,
-    unidad: "m²",
+    cantidad: laminaRespaldoPiezas,
+    unidad: "PIEZA",
     costoUnitario: cost(costMap, "LAMINA_GALV_CAL26"),
   });
 
@@ -978,8 +1012,8 @@ export function calculateCajaLuz(
     grupo: "Lámina",
     concepto: "Lámina canto galvanizada cal. 26",
     sku: "LAMINA_GALV_CAL26",
-    cantidad: areaCantoM2,
-    unidad: "m²",
+    cantidad: laminaCantoPiezas,
+    unidad: "PIEZA",
     costoUnitario: cost(costMap, "LAMINA_GALV_CAL26"),
   });
 
@@ -1038,14 +1072,12 @@ export function calculateCajaLuz(
 
   if (form.iluminacion === "Lámparas LED") {
     const lamp = getLampRule(altoM);
-    const separacion = Math.max(toNumber(form.separacionLamparasM), 0.01);
-
-    const lamparasPorLinea = Math.max(Math.ceil(anchoM / separacion), 1);
-    const lineasVerticales = Math.max(Math.ceil(altoM / lamp.largoM), 1);
 
     iluminacionLabel = lamp.label;
-    iluminacionCantidad =
-      lamparasPorLinea * lineasVerticales * cantidad * vistas;
+    iluminacionCantidad = getLamparasLedCantidad({
+      areaBaseM2,
+      cantidad,
+    });
     iluminacionUnidad = "PIEZA";
     consumoW = iluminacionCantidad * toNumber(form.wattsPorLampara);
     usaFuente = false;
