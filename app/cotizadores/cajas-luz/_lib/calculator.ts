@@ -751,48 +751,62 @@ function addSoportesInstalacionLines({
     form.tipoCaja === "Paleta" ||
     form.tipoCaja === "Doble vista";
 
-  if (esAzotea || esTecho || esPared || esEspecial) {
-    const anguloSku =
-      esAzotea || esTecho ? "ANGULO_ACERO_1" : "ANGULO_ACERO_1_1_2";
+  /*
+    REGLA SOPORTES INSTALACIÓN — CAJA 1X1
 
-    const anguloLabel =
-      esAzotea || esTecho
-        ? 'Ángulo de acero 1"'
-        : 'Ángulo de acero 1 1/2"';
+    Referencia:
+    - Ángulo de acero 1" = 0.50 pieza
+    - Taquete TX 3/8 x 3 = 6 piezas
+    - Pija taladrante 2" = 6 piezas
 
-    const anguloMl = Math.ceil(Math.max(perimetroMl * 0.5, cantidad * 2));
-    const puntosFijacion = Math.max(4 * cantidad, Math.ceil(anguloMl / 0.5));
+    Se agrega cuando la caja incluye instalación.
+  */
 
-    addLine({
-      lines,
-      grupo: "Soportes instalación",
-      concepto: anguloLabel,
-      sku: anguloSku,
-      cantidad: anguloMl,
-      unidad: "ML",
-      costoUnitario: cost(costMap, anguloSku),
-    });
+  const anguloSku = esEspecial ? "ANGULO_ACERO_1_1_2" : "ANGULO_ACERO_1";
 
-    addLine({
-      lines,
-      grupo: "Soportes instalación",
-      concepto: "Taquete TX 3/8 x 3",
-      sku: "TAQUETE_TX_3_8",
-      cantidad: puntosFijacion,
-      unidad: "PIEZA",
-      costoUnitario: cost(costMap, "TAQUETE_TX_3_8"),
-    });
+  const anguloLabel = esEspecial
+    ? 'Ángulo de acero 1 1/2"'
+    : 'Ángulo de acero 1" x 1/8';
 
-    addLine({
-      lines,
-      grupo: "Soportes instalación",
-      concepto: 'Pija taladrante 2"',
-      sku: "PIJA_TALADRANTE_2",
-      cantidad: puntosFijacion,
-      unidad: "PIEZA",
-      costoUnitario: cost(costMap, "PIJA_TALADRANTE_2"),
-    });
-  }
+  const anguloPiezas = Math.max(
+    0.5,
+    roundUpToQuarter(perimetroMl / 8)
+  );
+
+  const puntosFijacion = Math.max(
+    6 * cantidad,
+    Math.ceil(perimetroMl * 1.5)
+  );
+
+  addLine({
+    lines,
+    grupo: "Soportes instalación",
+    concepto: anguloLabel,
+    sku: anguloSku,
+    cantidad: anguloPiezas,
+    unidad: "PIEZA",
+    costoUnitario: cost(costMap, anguloSku),
+  });
+
+  addLine({
+    lines,
+    grupo: "Soportes instalación",
+    concepto: "Taquete TX 3/8 x 3",
+    sku: "TAQUETE_TX_3_8",
+    cantidad: puntosFijacion,
+    unidad: "PIEZA",
+    costoUnitario: cost(costMap, "TAQUETE_TX_3_8"),
+  });
+
+  addLine({
+    lines,
+    grupo: "Soportes instalación",
+    concepto: 'Pija taladrante 2"',
+    sku: "PIJA_TALADRANTE_2",
+    cantidad: puntosFijacion,
+    unidad: "PIEZA",
+    costoUnitario: cost(costMap, "PIJA_TALADRANTE_2"),
+  });
 
   if (form.tipoCaja === "Bandera" || form.tipoCaja === "Paleta") {
     const tuboAlma = getTuboAlmaRule(areaBaseM2);
