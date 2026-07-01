@@ -98,6 +98,14 @@ const defaultForm: FormState = {
 
 const tipoCajaOptions = ["Recta", "Suajada", "Doble vista", "Bandera", "Paleta"];
 
+const tipoCajaLabels: Record<string, string> = {
+  Recta: "Una vista",
+  Suajada: "Suajada",
+  "Doble vista": "Doble vista",
+  Bandera: "Tipo bandera",
+  Paleta: "Tipo paleta",
+};
+
 const caratulaOptions = [
   "Lona backlight impresa",
   "Lona backlight rotulada",
@@ -275,6 +283,7 @@ export default function CajasLuzForm({
                   value={form.tipoCaja}
                   onChange={(value) => updateText("tipoCaja", value)}
                   options={tipoCajaOptions}
+                  optionLabels={tipoCajaLabels}
                 />
 
                 <SelectField
@@ -895,12 +904,16 @@ function ResultSummary({ result }: { result: QuoteResult }) {
           label="Precio sin IVA"
           value={money(result.costos.precioSinIva)}
         />
+
         <ResultRow label="IVA" value={money(result.costos.iva)} />
+
         <ResultRow
           label="Costo directo"
           value={money(result.costos.costoDirecto)}
         />
+
         <ResultRow label="Utilidad" value={money(result.costos.utilidad)} />
+
         <ResultRow
           label="Margen"
           value={`${fixed(result.costos.margenPorcentaje)}%`}
@@ -912,32 +925,39 @@ function ResultSummary({ result }: { result: QuoteResult }) {
           label="Área frente"
           value={`${fixed(result.medidas.areaFrenteM2)} m²`}
         />
+
         <ResultRow
           label="Canto"
           value={`${fixed(result.medidas.cantoCm)} cm`}
         />
+
         <ResultRow
           label="Tiempo real fabricación"
           value={`${fixed(result.tiempos.fabricacionHoras)} h`}
         />
+
         <ResultRow
           label="Tiempo real instalación"
           value={`${fixed(result.tiempos.instalacionHoras)} h`}
         />
+
         <ResultRow
           label="HH fabricación"
           value={`${fixed(result.tiempos.horasHombreFabricacion)} HH`}
         />
+
         <ResultRow
           label="HH instalación"
           value={`${fixed(result.tiempos.horasHombreInstalacion)} HH`}
         />
+
         <ResultRow
           label="Iluminación"
           value={`${result.iluminacion.label} · ${fixed(
             result.iluminacion.cantidad
           )} ${result.iluminacion.unidad}`}
         />
+
         <ResultRow
           label="Tubular"
           value={`${result.estructura.tubularLabel} · ${fixed(
