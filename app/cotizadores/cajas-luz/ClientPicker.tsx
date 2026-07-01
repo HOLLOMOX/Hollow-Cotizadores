@@ -88,11 +88,6 @@ export default function ClientPicker({
   }, [sortedClients, selectedClientId]);
 
   function handleSelect(value: string) {
-    if (value === "__new__") {
-      setOpen(true);
-      return;
-    }
-
     if (value === "") {
       onChange({
         clientId: "",
@@ -165,7 +160,7 @@ export default function ClientPicker({
         <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
           <label className="block">
             <span className="text-xs font-black uppercase tracking-wide text-neutral-500">
-              Cliente
+              Cliente registrado
             </span>
 
             <select
@@ -190,7 +185,10 @@ export default function ClientPicker({
 
           <button
             type="button"
-            onClick={() => setOpen(true)}
+            onClick={() => {
+              setError("");
+              setOpen(true);
+            }}
             className="min-h-12 rounded-2xl bg-yellow-400 px-5 text-sm font-black uppercase tracking-wide text-neutral-950 transition hover:bg-yellow-300"
           >
             + Nuevo cliente
@@ -267,17 +265,15 @@ export default function ClientPicker({
       </div>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6 backdrop-blur-sm">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-neutral-800 bg-neutral-950 p-5 text-white shadow-2xl shadow-black/60">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 px-4 py-8 backdrop-blur-sm">
+          <div className="mx-auto w-full max-w-2xl rounded-3xl border border-neutral-800 bg-neutral-950 p-5 text-white shadow-2xl shadow-black/60">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.22em] text-yellow-400">
                   Nuevo cliente
                 </p>
 
-                <h2 className="mt-1 text-2xl font-black">
-                  Registrar cliente
-                </h2>
+                <h2 className="mt-1 text-2xl font-black">Registrar cliente</h2>
 
                 <p className="mt-1 text-sm leading-6 text-neutral-400">
                   Se guardará en la base de clientes y quedará seleccionado en
