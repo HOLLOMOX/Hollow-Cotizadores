@@ -1,9 +1,4 @@
-import type {
-  Caratula,
-  FormState,
-  Iluminacion,
-  TipoCaja,
-} from "./types";
+import type { Caratula, FormState, Iluminacion, TipoCaja } from "./types";
 
 export const MODULOS_POR_TIRA = 20;
 
@@ -11,15 +6,15 @@ export const WATTS_MODULO_NORMAL = 0.72;
 export const WATTS_MODULO_ULTRA = 1.5;
 export const WATTS_MODULO_MICRO = 0.2;
 
-export const TIPOS_CAJA: TipoCaja[] = [
-  "Una vista",
+export const TIPO_CAJA_OPTIONS: TipoCaja[] = [
+  "Recta",
+  "Suajada",
   "Doble vista",
   "Bandera",
   "Paleta",
-  "Suajada",
 ];
 
-export const CARATULAS: Caratula[] = [
+export const CARATULA_OPTIONS: Caratula[] = [
   "Lona backlight impresa",
   "Lona backlight rotulada",
   "Acrílico rotulado con vinil de corte",
@@ -28,7 +23,7 @@ export const CARATULAS: Caratula[] = [
   "Otro",
 ];
 
-export const ILUMINACIONES: Iluminacion[] = [
+export const ILUMINACION_OPTIONS: Iluminacion[] = [
   "Lámparas LED",
   "Módulos LED normales",
   "Módulos LED ultra brillantes",
@@ -36,63 +31,54 @@ export const ILUMINACIONES: Iluminacion[] = [
   "Sin iluminación",
 ];
 
-export const ALTURA_CONDICIONES = [
-  "A NIVEL DE PISO / BAJA ALTURA",
-  "A 3 METROS",
-  "A 4 METROS",
-  "MAYOR A 4 METROS",
-  "CON ESCALERA",
-  "CON ANDAMIOS",
-  "EN FACHADA",
-  "EN TECHO",
-  "EN ALTURA CON DESCOLGADA",
-  "INSTALACIÓN ESPECIAL",
-] as const;
-
 export const DEFAULT_FORM: FormState = {
+  clientId: "",
   cliente: "Cliente nuevo",
+  clienteTelefono: "",
+  clienteEmail: "",
+  clienteRfc: "",
+  clienteDireccion: "",
+
   vendedor: "",
   proyecto: "Caja de luz",
 
-  tipoCaja: "Una vista",
+  tipoCaja: "Recta",
   cantidad: "1",
-  anchoM: "3",
+  anchoM: "1",
   altoM: "1",
 
   usarCantoAutomatico: true,
-  cantoCmManual: "20",
-
+  cantoCmManual: "22",
   vistas: "1",
+
   caratula: "Lona backlight impresa",
   iluminacion: "Lámparas LED",
 
-  incluyeInstalacion: "SI",
-  alturaCondicion: "A NIVEL DE PISO / BAJA ALTURA",
-  traslado: "ZONA_A",
-  trasladoTipo: "TRABAJO",
-  disenoGrafico: "NO_DISENO",
-
+  usarTiemposAutomaticos: true,
   personasFabricacion: "1",
   personasInstalacion: "2",
-
-  usarTiemposAutomaticos: true,
   horasFabricacionManual: "8",
-  horasInstalacionManual: "4",
+  horasInstalacionManual: "2",
 
-  materialExtra: "0",
+  incluyeInstalacion: "SI",
+  alturaCondicion: "Pared / fachada baja",
   andamios: "0",
   numeroDescolgadas: "0",
+  instalacion: "0",
+
+  traslado: "",
+  trasladoTipo: "TRABAJO",
+
+  disenoGrafico: "NO_DISENO",
 
   separacionLamparasM: "0.30",
-  wattsPorLampara: "18",
-
-  tirasPorM2Normal: "12",
-  tirasPorM2Ultra: "12",
-  tirasPorM2Micro: "20",
+  wattsPorLampara: "9",
+  tirasPorM2Normal: "3",
+  tirasPorM2Ultra: "3",
+  tirasPorM2Micro: "4",
 
   costoCaratulaM2: "0",
-
-  instalacion: "0",
+  materialExtra: "0",
   extras: "0",
 
   margen: "40",
@@ -101,78 +87,6 @@ export const DEFAULT_FORM: FormState = {
   observaciones: "",
 };
 
-export function getAlturaInstalacionRule(alturaCondicion: string) {
-  const value = alturaCondicion.toLowerCase();
-
-  if (value.includes("especial")) {
-    return {
-      porcentajeExtra: 50,
-      label: "Instalación especial",
-    };
-  }
-
-  if (value.includes("descolgada")) {
-    return {
-      porcentajeExtra: 40,
-      label: "Instalación en altura con descolgada",
-    };
-  }
-
-  if (value.includes("techo")) {
-    return {
-      porcentajeExtra: 30,
-      label: "Instalación en techo",
-    };
-  }
-
-  if (value.includes("mayor a 4")) {
-    return {
-      porcentajeExtra: 25,
-      label: "Instalación mayor a 4 metros",
-    };
-  }
-
-  if (value.includes("andamio")) {
-    return {
-      porcentajeExtra: 25,
-      label: "Instalación con andamios",
-    };
-  }
-
-  if (value.includes("fachada")) {
-    return {
-      porcentajeExtra: 20,
-      label: "Instalación en fachada",
-    };
-  }
-
-  if (value.includes("4 metros")) {
-    return {
-      porcentajeExtra: 15,
-      label: "Instalación a 4 metros",
-    };
-  }
-
-  if (value.includes("escalera")) {
-    return {
-      porcentajeExtra: 15,
-      label: "Instalación con escalera",
-    };
-  }
-
-  if (value.includes("3 metros")) {
-    return {
-      porcentajeExtra: 10,
-      label: "Instalación a 3 metros",
-    };
-  }
-
-  return {
-    porcentajeExtra: 0,
-    label: "A nivel de piso / baja altura",
-  };
-}
-
 export function getCantoRule({
   tipoCaja,
   iluminacion,
@@ -180,42 +94,30 @@ export function getCantoRule({
   tipoCaja: TipoCaja;
   iluminacion: Iluminacion;
 }) {
-  if (
-    tipoCaja === "Doble vista" ||
-    tipoCaja === "Bandera" ||
-    tipoCaja === "Paleta"
-  ) {
+  if (iluminacion === "Sin iluminación") {
     return {
-      cantoCm: 40,
-      desarrolloLaminaCm: 48,
-      label: "Doble vista / bandera / paleta",
+      cantoCm: 12,
+      desarrolloLaminaCm: 20,
     };
   }
 
-  if (iluminacion === "Lámparas LED") {
+  if (tipoCaja === "Suajada") {
     return {
       cantoCm: 22,
       desarrolloLaminaCm: 30,
-      label: "Caja con lámparas LED",
     };
   }
 
-  if (
-    iluminacion === "Módulos LED normales" ||
-    iluminacion === "Módulos LED ultra brillantes" ||
-    iluminacion === "Micro LEDs"
-  ) {
+  if (tipoCaja === "Bandera" || tipoCaja === "Paleta") {
     return {
-      cantoCm: 10,
-      desarrolloLaminaCm: 18,
-      label: "Caja con módulos LED",
+      cantoCm: 25,
+      desarrolloLaminaCm: 35,
     };
   }
 
   return {
-    cantoCm: 10,
-    desarrolloLaminaCm: 18,
-    label: "Caja sin iluminación",
+    cantoCm: 22,
+    desarrolloLaminaCm: 30,
   };
 }
 
@@ -226,46 +128,81 @@ export function getTubularRule({
   tipoCaja: TipoCaja;
   areaBaseM2: number;
 }) {
-  if (
-    tipoCaja === "Bandera" ||
-    tipoCaja === "Paleta" ||
-    tipoCaja === "Doble vista" ||
-    areaBaseM2 > 6
-  ) {
+  if (tipoCaja === "Bandera" || tipoCaja === "Paleta" || areaBaseM2 > 6) {
     return {
-      sku: "TUBULAR_1X1",
-      label: "Tubular 1 x 1",
-      varillaSoldaduraPorInsercion: 0.5,
+      sku: "TUBULAR_ZINTRO_1_1_2",
+      label: 'Tubular zintro 1 1/2" x 1 1/2" tramo 6 m',
+      varillaSoldaduraPorInsercion: 0.08,
     };
   }
 
-  if (tipoCaja === "Suajada" || areaBaseM2 < 1) {
+  if (areaBaseM2 > 3) {
     return {
-      sku: "TUBULAR_1_2",
-      label: "Tubular 1/2 x 1/2",
-      varillaSoldaduraPorInsercion: 1 / 3,
+      sku: "TUBULAR_ZINTRO_1",
+      label: 'Tubular zintro 1" x 1" tramo 6 m',
+      varillaSoldaduraPorInsercion: 0.06,
     };
   }
 
   return {
-    sku: "TUBULAR_3_4",
-    label: "Tubular 3/4 x 3/4",
-    varillaSoldaduraPorInsercion: 1 / 3,
+    sku: "TUBULAR_ZINTRO_3_4",
+    label: 'Tubular zintro 3/4" x 3/4" tramo 6 m',
+    varillaSoldaduraPorInsercion: 0.05,
   };
 }
 
 export function getLampRule(altoM: number) {
-  if (altoM < 1.2) {
+  if (altoM <= 1) {
     return {
-      sku: "LAMPARA_LED_60CM",
-      label: "Lámpara LED 60 cm",
+      sku: "LAMPARA_LED_9W_60CM",
+      label: "Lámpara LED 9 W 0.60 m",
       largoM: 0.6,
     };
   }
 
   return {
-    sku: "LAMPARA_LED_120CM",
-    label: "Lámpara LED 120 cm",
+    sku: "LAMPARA_LED_18W_120CM",
+    label: "Lámpara LED 18 W 1.20 m",
     largoM: 1.2,
+  };
+}
+
+export function getAlturaInstalacionRule(alturaCondicion: string) {
+  const value = String(alturaCondicion ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+  if (value.includes("descolgada")) {
+    return {
+      label: alturaCondicion || "Descolgada",
+      porcentajeExtra: 80,
+    };
+  }
+
+  if (value.includes("azotea")) {
+    return {
+      label: alturaCondicion || "Azotea",
+      porcentajeExtra: 50,
+    };
+  }
+
+  if (value.includes("techo")) {
+    return {
+      label: alturaCondicion || "Techo",
+      porcentajeExtra: 40,
+    };
+  }
+
+  if (value.includes("alta")) {
+    return {
+      label: alturaCondicion || "Altura alta",
+      porcentajeExtra: 35,
+    };
+  }
+
+  return {
+    label: alturaCondicion || "Pared / fachada baja",
+    porcentajeExtra: 0,
   };
 }

@@ -1,9 +1,10 @@
 export type TipoCaja =
-  | "Una vista"
+  | "Recta"
+  | "Suajada"
   | "Doble vista"
   | "Bandera"
   | "Paleta"
-  | "Suajada";
+  | string;
 
 export type Caratula =
   | "Lona backlight impresa"
@@ -11,113 +12,31 @@ export type Caratula =
   | "Acrílico rotulado con vinil de corte"
   | "Acrílico rotulado con impresión de vinil"
   | "Policarbonato"
-  | "Otro";
+  | "Otro"
+  | string;
 
 export type Iluminacion =
   | "Lámparas LED"
   | "Módulos LED normales"
   | "Módulos LED ultra brillantes"
   | "Micro LEDs"
-  | "Sin iluminación";
+  | "Sin iluminación"
+  | string;
 
-export type CostRow = {
+export type CostItem = {
+  id?: string;
   sku: string;
   name: string;
-  unit: string;
+  category?: string | null;
+  unit?: string | null;
   cost: number;
-  sale_price: number | null;
+  active?: boolean | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  [key: string]: unknown;
 };
 
-export type InstallationCondition = {
-  code: string;
-  label: string;
-  percent_extra: number;
-  active?: boolean;
-  sort_order?: number;
-  notes?: string | null;
-};
-
-export type TransportZone = {
-  code: string;
-  label: string;
-  display_name: string | null;
-  coverage_text: string | null;
-  work_cost: number;
-  delivery_cost: number;
-  delivery_discount_percent: number;
-  active?: boolean;
-  sort_order?: number;
-  notes?: string | null;
-};
-
-export type DesignOption = {
-  code: string;
-  label: string;
-  minutes: number;
-  price: number;
-  active?: boolean;
-  sort_order?: number;
-  notes?: string | null;
-};
-
-export type FormState = {
-  cliente: string;
-  vendedor: string;
-  proyecto: string;
-
-  tipoCaja: TipoCaja;
-  cantidad: string;
-  anchoM: string;
-  altoM: string;
-
-  usarCantoAutomatico: boolean;
-  cantoCmManual: string;
-
-  vistas: string;
-  caratula: Caratula;
-  iluminacion: Iluminacion;
-
-  incluyeInstalacion: "SI" | "NO";
-  alturaCondicion: string;
-  traslado: string;
-  trasladoTipo: "TRABAJO" | "ENTREGA";
-  disenoGrafico: string;
-
-  personasFabricacion: string;
-  personasInstalacion: string;
-
-  usarTiemposAutomaticos: boolean;
-  horasFabricacionManual: string;
-  horasInstalacionManual: string;
-
-  materialExtra: string;
-  andamios: string;
-  numeroDescolgadas: string;
-
-  separacionLamparasM: string;
-  wattsPorLampara: string;
-
-  tirasPorM2Normal: string;
-  tirasPorM2Ultra: string;
-  tirasPorM2Micro: string;
-
-  costoCaratulaM2: string;
-
-  instalacion: string;
-  extras: string;
-
-  margen: string;
-  ivaPorcentaje: string;
-
-  observaciones: string;
-};
-
-export type FuenteResult = {
-  label: string;
-  qty30: number;
-  qty60: number;
-  qty100: number;
-};
+export type CostRow = CostItem;
 
 export type MaterialLine = {
   grupo: string;
@@ -127,6 +46,124 @@ export type MaterialLine = {
   unidad: string;
   costoUnitario: number;
   total: number;
+};
+
+export type FuenteResult = {
+  label: string;
+  qty30: number;
+  qty60: number;
+  qty100: number;
+};
+
+export type InstallationCondition = {
+  id?: string;
+  code: string;
+  label: string;
+  percent_extra: number;
+  active?: boolean | null;
+  sort_order?: number | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+export type TransportZone = {
+  id?: string;
+  code: string;
+  label: string;
+  display_name?: string | null;
+
+  coverage_text?: string | null;
+
+  work_cost: number;
+  delivery_cost: number;
+
+  work_discount_percent?: number | null;
+  delivery_discount_percent?: number | null;
+
+  active?: boolean | null;
+  sort_order?: number | null;
+
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+export type DesignOption = {
+  id?: string;
+  code: string;
+  label: string;
+  minutes?: number | null;
+  price: number;
+  active?: boolean | null;
+  sort_order?: number | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+export type CotizadorClientOption = {
+  id: string;
+  name: string;
+  contact_name: string | null;
+  phone: string | null;
+  email: string | null;
+  rfc: string | null;
+  address: string | null;
+  notes: string | null;
+};
+
+export type FormState = {
+  clientId: string;
+  cliente: string;
+  clienteTelefono: string;
+  clienteEmail: string;
+  clienteRfc: string;
+  clienteDireccion: string;
+
+  proyecto: string;
+  vendedor: string;
+
+  tipoCaja: TipoCaja;
+  caratula: Caratula;
+  iluminacion: Iluminacion;
+
+  anchoM: string;
+  altoM: string;
+  cantidad: string;
+  vistas: string;
+
+  usarCantoAutomatico: boolean;
+  cantoCmManual: string;
+
+  usarTiemposAutomaticos: boolean;
+  personasFabricacion: string;
+  personasInstalacion: string;
+  horasFabricacionManual: string;
+  horasInstalacionManual: string;
+
+  incluyeInstalacion: string;
+  alturaCondicion: string;
+  andamios: string;
+  numeroDescolgadas: string;
+  instalacion: string;
+
+  traslado: string;
+  trasladoTipo: string;
+
+  disenoGrafico: string;
+
+  separacionLamparasM: string;
+  wattsPorLampara: string;
+  tirasPorM2Normal: string;
+  tirasPorM2Ultra: string;
+  tirasPorM2Micro: string;
+
+  costoCaratulaM2: string;
+  materialExtra: string;
+  extras: string;
+
+  margen: string;
+  ivaPorcentaje: string;
+
+  observaciones: string;
 };
 
 export type QuoteResult = {
@@ -194,4 +231,14 @@ export type QuoteResult = {
 
   partidas: MaterialLine[];
   textoCotizacion: string;
+};
+
+export type SaveQuotePayload = {
+  clientId?: string | null;
+  cliente: string;
+  proyecto: string;
+  vendedor?: string;
+  form: FormState;
+  result: QuoteResult;
+  textoCotizacion?: string;
 };
