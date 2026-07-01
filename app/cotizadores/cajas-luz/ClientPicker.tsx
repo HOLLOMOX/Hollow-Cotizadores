@@ -83,6 +83,10 @@ export default function ClientPicker({
     return [...clients].sort((a, b) => a.name.localeCompare(b.name));
   }, [clients]);
 
+  const selectedClient = useMemo(() => {
+    return sortedClients.find((client) => client.id === selectedClientId) ?? null;
+  }, [sortedClients, selectedClientId]);
+
   function handleSelect(value: string) {
     if (value === "__new__") {
       setOpen(true);
@@ -151,58 +155,113 @@ export default function ClientPicker({
 
   return (
     <>
-      <div className="space-y-4 rounded-3xl border border-neutral-800 bg-neutral-950 p-4">
+      <div className="rounded-3xl border border-neutral-800 bg-neutral-950 p-4">
         {error && !open && (
-          <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-3 text-sm font-bold text-red-200">
+          <div className="mb-4 rounded-2xl border border-red-500/30 bg-red-500/10 p-3 text-sm font-bold text-red-200">
             {error}
           </div>
         )}
 
-        <div>
-          <label className="text-xs font-black uppercase tracking-wide text-neutral-500">
-            Cliente registrado
-          </label>
+        <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+          <label className="block">
+            <span className="text-xs font-black uppercase tracking-wide text-neutral-500">
+              Cliente
+            </span>
 
-          <select
-            value={selectedClientId}
-            onChange={(event) => handleSelect(event.target.value)}
-            className="mt-2 min-h-12 w-full rounded-2xl border border-neutral-700 bg-neutral-900 px-4 text-sm font-bold text-white outline-none transition focus:border-yellow-400"
-          >
-            <option value="">
-              {loadingClients
-                ? "Cargando clientes..."
-                : "Cliente manual / sin registrar"}
-            </option>
-
-            {sortedClients.map((client) => (
-              <option key={client.id} value={client.id}>
-                {client.name}
-                {client.phone ? ` · ${client.phone}` : ""}
+            <select
+              value={selectedClientId}
+              onChange={(event) => handleSelect(event.target.value)}
+              className="mt-2 min-h-12 w-full rounded-2xl border border-neutral-700 bg-neutral-900 px-4 text-sm font-bold text-white outline-none transition focus:border-yellow-400"
+            >
+              <option value="">
+                {loadingClients
+                  ? "Cargando clientes..."
+                  : "Cliente manual / sin registrar"}
               </option>
-            ))}
 
-            <option value="__new__">+ Crear nuevo cliente</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="text-xs font-black uppercase tracking-wide text-neutral-500">
-            Nombre del cliente
+              {sortedClients.map((client) => (
+                <option key={client.id} value={client.id}>
+                  {client.name}
+                  {client.phone ? ` · ${client.phone}` : ""}
+                </option>
+              ))}
+            </select>
           </label>
 
-          <input
-            name="cliente"
-            value={clientName}
-            onChange={(event) =>
-              onChange({
-                clientId: selectedClientId,
-                clientName: event.target.value,
-              })
-            }
-            placeholder="Ej. Farmacia Centro"
-            className="mt-2 min-h-12 w-full rounded-2xl border border-neutral-700 bg-neutral-900 px-4 text-sm text-white outline-none transition placeholder:text-neutral-600 focus:border-yellow-400"
-          />
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="min-h-12 rounded-2xl bg-yellow-400 px-5 text-sm font-black uppercase tracking-wide text-neutral-950 transition hover:bg-yellow-300"
+          >
+            + Nuevo cliente
+          </button>
         </div>
+
+        {!selectedClientId && (
+          <label className="mt-4 block">
+            <span className="text-xs font-black uppercase tracking-wide text-neutral-500">
+              Cliente manual
+            </span>
+
+            <input
+              name="cliente"
+              value={clientName}
+              onChange={(event) =>
+                onChange({
+                  clientId: "",
+                  clientName: event.target.value,
+                  phone: "",
+                  email: "",
+                  rfc: "",
+                  address: "",
+                })
+              }
+              placeholder="Ej. Cliente nuevo"
+              className="mt-2 min-h-12 w-full rounded-2xl border border-neutral-700 bg-neutral-900 px-4 text-sm text-white outline-none transition placeholder:text-neutral-600 focus:border-yellow-400"
+            />
+          </label>
+        )}
+
+        {selectedClient && (
+          <div className="mt-4 rounded-2xl border border-yellow-500/20 bg-yellow-500/10 p-4">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-xs font-black uppercase tracking-wide text-yellow-400">
+                  Cliente seleccionado
+                </p>
+
+                <p className="mt-1 text-lg font-black text-white">
+                  {selectedClient.name}
+                </p>
+
+                {(selectedClient.phone || selectedClient.email) && (
+                  <p className="mt-1 text-sm text-neutral-300">
+                    {[selectedClient.phone, selectedClient.email]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  onChange({
+                    clientId: "",
+                    clientName: "",
+                    phone: "",
+                    email: "",
+                    rfc: "",
+                    address: "",
+                  })
+                }
+                className="rounded-2xl border border-neutral-700 bg-neutral-950 px-4 py-2 text-xs font-black uppercase tracking-wide text-neutral-300 transition hover:border-red-400 hover:text-red-300"
+              >
+                Quitar
+              </button>
+            </div>
+          </div>
+        )}
 
         <input type="hidden" name="clientId" value={selectedClientId} />
       </div>
@@ -221,7 +280,7 @@ export default function ClientPicker({
                 </h2>
 
                 <p className="mt-1 text-sm leading-6 text-neutral-400">
-                  Se guardará en tu base de clientes y quedará seleccionado en
+                  Se guardará en la base de clientes y quedará seleccionado en
                   esta cotización.
                 </p>
               </div>

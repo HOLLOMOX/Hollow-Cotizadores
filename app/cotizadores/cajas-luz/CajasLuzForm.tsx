@@ -238,13 +238,10 @@ export default function CajasLuzForm({
                       ...prev,
                       clientId: clientData.clientId,
                       cliente: clientData.clientName,
-                      clienteTelefono:
-                        clientData.phone ?? prev.clienteTelefono ?? "",
-                      clienteEmail:
-                        clientData.email ?? prev.clienteEmail ?? "",
-                      clienteRfc: clientData.rfc ?? prev.clienteRfc ?? "",
-                      clienteDireccion:
-                        clientData.address ?? prev.clienteDireccion ?? "",
+                      clienteTelefono: clientData.phone ?? "",
+                      clienteEmail: clientData.email ?? "",
+                      clienteRfc: clientData.rfc ?? "",
+                      clienteDireccion: clientData.address ?? "",
                     }));
                   }}
                 />
@@ -262,38 +259,6 @@ export default function CajasLuzForm({
                     value={form.vendedor}
                     onChange={(value) => updateText("vendedor", value)}
                     placeholder="Nombre del vendedor"
-                  />
-                </div>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <TextField
-                    label="Teléfono cliente"
-                    value={form.clienteTelefono}
-                    onChange={(value) => updateText("clienteTelefono", value)}
-                    placeholder="Opcional"
-                  />
-
-                  <TextField
-                    label="Correo cliente"
-                    value={form.clienteEmail}
-                    onChange={(value) => updateText("clienteEmail", value)}
-                    placeholder="Opcional"
-                  />
-                </div>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <TextField
-                    label="RFC"
-                    value={form.clienteRfc}
-                    onChange={(value) => updateText("clienteRfc", value)}
-                    placeholder="Opcional"
-                  />
-
-                  <TextField
-                    label="Dirección"
-                    value={form.clienteDireccion}
-                    onChange={(value) => updateText("clienteDireccion", value)}
-                    placeholder="Opcional"
                   />
                 </div>
               </div>
@@ -330,7 +295,11 @@ export default function CajasLuzForm({
               <CaratulaInfo caratula={form.caratula} />
             </Panel>
 
-            <Panel eyebrow="Medidas" title="Dimensiones">
+            <Panel
+              eyebrow="Medidas"
+              title="Dimensiones"
+              description="Ancho y alto se capturan en metros."
+            >
               <div className="grid gap-4 md:grid-cols-4">
                 <NumberField
                   label="Ancho"
@@ -499,6 +468,7 @@ export default function CajasLuzForm({
             <Panel
               eyebrow="Tiempos y reglas"
               title="Mano de obra e iluminación"
+              description="Puedes dejar tiempos automáticos o capturarlos manualmente."
             >
               <div className="grid gap-4 md:grid-cols-2">
                 <CheckField
@@ -594,7 +564,11 @@ export default function CajasLuzForm({
               </div>
             </Panel>
 
-            <Panel eyebrow="Precio" title="Margen, extras y observaciones">
+            <Panel
+              eyebrow="Precio"
+              title="Margen, extras y observaciones"
+              description="El margen se usa para calcular el precio final."
+            >
               <div className="grid gap-4 md:grid-cols-4">
                 <NumberField
                   label="Margen"
@@ -912,11 +886,20 @@ function ResultSummary({ result }: { result: QuoteResult }) {
       description="Importes y datos técnicos principales."
     >
       <div className="grid gap-3">
-        <BigTotal label="Total con IVA" value={money(result.costos.totalConIva)} />
+        <BigTotal
+          label="Total con IVA"
+          value={money(result.costos.totalConIva)}
+        />
 
-        <ResultRow label="Precio sin IVA" value={money(result.costos.precioSinIva)} />
+        <ResultRow
+          label="Precio sin IVA"
+          value={money(result.costos.precioSinIva)}
+        />
         <ResultRow label="IVA" value={money(result.costos.iva)} />
-        <ResultRow label="Costo directo" value={money(result.costos.costoDirecto)} />
+        <ResultRow
+          label="Costo directo"
+          value={money(result.costos.costoDirecto)}
+        />
         <ResultRow label="Utilidad" value={money(result.costos.utilidad)} />
         <ResultRow
           label="Margen"
