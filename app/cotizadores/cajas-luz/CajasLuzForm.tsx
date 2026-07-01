@@ -40,6 +40,14 @@ type CajasLuzFormProps = {
   userRole?: string;
 };
 
+type TabKey =
+  | "cliente"
+  | "producto"
+  | "medidas"
+  | "instalacion"
+  | "manoObra"
+  | "precio";
+
 const defaultForm: FormState = {
   clientId: "",
   cliente: "",
@@ -96,6 +104,39 @@ const defaultForm: FormState = {
   observaciones: "",
 };
 
+const tabs: Array<{ key: TabKey; label: string; description: string }> = [
+  {
+    key: "cliente",
+    label: "Cliente",
+    description: "Cliente, proyecto y vendedor",
+  },
+  {
+    key: "producto",
+    label: "Producto",
+    description: "Tipo, carátula e iluminación",
+  },
+  {
+    key: "medidas",
+    label: "Medidas",
+    description: "Dimensiones y canto",
+  },
+  {
+    key: "instalacion",
+    label: "Instalación",
+    description: "Altura, traslado y servicios",
+  },
+  {
+    key: "manoObra",
+    label: "Mano de obra",
+    description: "Tiempos y personas",
+  },
+  {
+    key: "precio",
+    label: "Precio",
+    description: "Margen, IVA y extras",
+  },
+];
+
 const tipoCajaOptions = ["Recta", "Suajada", "Doble vista", "Bandera", "Paleta"];
 
 const tipoCajaLabels: Record<string, string> = {
@@ -134,6 +175,7 @@ export default function CajasLuzForm({
   saveAction,
 }: CajasLuzFormProps) {
   const [form, setForm] = useState<FormState>(defaultForm);
+  const [activeTab, setActiveTab] = useState<TabKey>("cliente");
   const [saveMessage, setSaveMessage] = useState("");
   const [saveError, setSaveError] = useState("");
   const [isSaving, startSaving] = useTransition();
@@ -173,6 +215,24 @@ export default function CajasLuzForm({
 
   function updateText(key: keyof FormState, value: string) {
     setForm((prev) => ({ ...prev, [key]: value }) as FormState);
+  }
+
+  function goToNextTab() {
+    const currentIndex = tabs.findIndex((tab) => tab.key === activeTab);
+    const next = tabs[currentIndex + 1];
+
+    if (next) {
+      setActiveTab(next.key);
+    }
+  }
+
+  function goToPreviousTab() {
+    const currentIndex = tabs.findIndex((tab) => tab.key === activeTab);
+    const previous = tabs[currentIndex - 1];
+
+    if (previous) {
+      setActiveTab(previous.key);
+    }
   }
 
   async function copyQuoteText() {
@@ -226,415 +286,485 @@ export default function CajasLuzForm({
   }
 
   return (
-    <main className="min-h-screen bg-neutral-950 px-4 py-8 text-white sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-neutral-950 px-4 py-6 text-white sm:px-6 lg:px-8">
       <div className="mx-auto w-full max-w-7xl space-y-6">
         <HeaderCard />
 
-        <section className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_460px]">
-          <div className="space-y-6">
-            <Panel
-              eyebrow="Datos generales"
-              title="Cliente y proyecto"
-              description="Selecciona un cliente registrado o crea uno nuevo sin salir del cotizador."
-            >
-              <div className="grid gap-4">
-                <ClientPicker
-                  selectedClientId={form.clientId}
-                  clientName={form.cliente}
-                  onChange={(clientData) => {
-                    setForm((prev) => ({
-                      ...prev,
-                      clientId: clientData.clientId,
-                      cliente: clientData.clientName,
-                      clienteTelefono: clientData.phone ?? "",
-                      clienteEmail: clientData.email ?? "",
-                      clienteRfc: clientData.rfc ?? "",
-                      clienteDireccion: clientData.address ?? "",
-                    }));
-                  }}
-                />
+        <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_430px]">
+          <div className="space-y-5">
+            <TabsNav activeTab={activeTab} setActiveTab={setActiveTab} />
 
-                <div className="grid gap-4 md:grid-cols-2">
-                  <TextField
-                    label="Proyecto"
-                    value={form.proyecto}
-                    onChange={(value) => updateText("proyecto", value)}
-                    placeholder="Ej. Caja de luz fachada"
-                  />
+            <section className="rounded-3xl border border-neutral-800 bg-neutral-900/95 p-4 shadow-2xl shadow-black/20 sm:p-5">
+              {activeTab === "cliente" && (
+                <TabPanel
+                  eyebrow="Datos generales"
+                  title="Cliente y proyecto"
+                  description="Selecciona un cliente registrado o crea uno nuevo sin salir del cotizador."
+                >
+                  <div className="grid gap-4">
+                    <ClientPicker
+                      selectedClientId={form.clientId}
+                      clientName={form.cliente}
+                      onChange={(clientData) => {
+                        setForm((prev) => ({
+                          ...prev,
+                          clientId: clientData.clientId,
+                          cliente: clientData.clientName,
+                          clienteTelefono: clientData.phone ?? "",
+                          clienteEmail: clientData.email ?? "",
+                          clienteRfc: clientData.rfc ?? "",
+                          clienteDireccion: clientData.address ?? "",
+                        }));
+                      }}
+                    />
 
-                  <TextField
-                    label="Vendedor"
-                    value={form.vendedor}
-                    onChange={(value) => updateText("vendedor", value)}
-                    placeholder="Nombre del vendedor"
-                  />
-                </div>
-              </div>
-            </Panel>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <TextField
+                        label="Proyecto"
+                        value={form.proyecto}
+                        onChange={(value) => updateText("proyecto", value)}
+                        placeholder="Ej. Caja de luz fachada"
+                      />
 
-            <Panel
-              eyebrow="Producto"
-              title="Configuración de caja de luz"
-              description="Define tipo de caja, carátula, medidas e iluminación."
-            >
-              <div className="grid gap-4 md:grid-cols-3">
-                <SelectField
-                  label="Tipo de caja"
-                  value={form.tipoCaja}
-                  onChange={(value) => updateText("tipoCaja", value)}
-                  options={tipoCajaOptions}
-                  optionLabels={tipoCajaLabels}
-                />
-
-                <SelectField
-                  label="Carátula"
-                  value={form.caratula}
-                  onChange={(value) => updateText("caratula", value)}
-                  options={caratulaOptions}
-                />
-
-                <SelectField
-                  label="Iluminación"
-                  value={form.iluminacion}
-                  onChange={(value) => updateText("iluminacion", value)}
-                  options={iluminacionOptions}
-                />
-              </div>
-
-              <CaratulaInfo caratula={form.caratula} />
-            </Panel>
-
-            <Panel
-              eyebrow="Medidas"
-              title="Dimensiones"
-              description="Ancho y alto se capturan en metros."
-            >
-              <div className="grid gap-4 md:grid-cols-4">
-                <NumberField
-                  label="Ancho"
-                  value={form.anchoM}
-                  onChange={(value) => updateText("anchoM", value)}
-                  step="0.01"
-                  min="0"
-                  suffix="m"
-                />
-
-                <NumberField
-                  label="Alto"
-                  value={form.altoM}
-                  onChange={(value) => updateText("altoM", value)}
-                  step="0.01"
-                  min="0"
-                  suffix="m"
-                />
-
-                <NumberField
-                  label="Cantidad"
-                  value={form.cantidad}
-                  onChange={(value) => updateText("cantidad", value)}
-                  step="1"
-                  min="1"
-                  suffix="pza"
-                />
-
-                <NumberField
-                  label="Vistas"
-                  value={form.vistas}
-                  onChange={(value) => updateText("vistas", value)}
-                  step="1"
-                  min="1"
-                  suffix="vista"
-                />
-              </div>
-
-              <div className="mt-4 grid gap-4 md:grid-cols-2">
-                <CheckField
-                  label="Usar canto automático"
-                  checked={form.usarCantoAutomatico}
-                  onChange={(value) => updateForm("usarCantoAutomatico", value)}
-                />
-
-                {!form.usarCantoAutomatico && (
-                  <NumberField
-                    label="Canto manual"
-                    value={form.cantoCmManual}
-                    onChange={(value) => updateText("cantoCmManual", value)}
-                    step="1"
-                    min="0"
-                    suffix="cm"
-                  />
-                )}
-              </div>
-            </Panel>
-
-            <Panel
-              eyebrow="Instalación"
-              title="Servicios, traslado y diseño"
-              description="La instalación se calcula por horas-hombre y puede subir por condición."
-            >
-              <div className="grid gap-4 md:grid-cols-3">
-                <SelectField
-                  label="Incluye instalación"
-                  value={form.incluyeInstalacion}
-                  onChange={(value) => updateText("incluyeInstalacion", value)}
-                  options={["SI", "NO"]}
-                />
-
-                <SelectField
-                  label="Condición / altura"
-                  value={form.alturaCondicion}
-                  onChange={(value) => updateText("alturaCondicion", value)}
-                  options={
-                    installationConditions.length > 0
-                      ? installationConditions.map((item) => item.label)
-                      : [
-                          "Pared / fachada baja",
-                          "Azotea",
-                          "Techo",
-                          "Descolgada",
-                        ]
-                  }
-                />
-
-                <SelectField
-                  label="Tipo de traslado"
-                  value={form.trasladoTipo}
-                  onChange={(value) => updateText("trasladoTipo", value)}
-                  options={["TRABAJO", "ENTREGA"]}
-                />
-              </div>
-
-              <div className="mt-4 grid gap-4 md:grid-cols-3">
-                <SelectField
-                  label="Zona de traslado"
-                  value={form.traslado}
-                  onChange={(value) => updateText("traslado", value)}
-                  options={[
-                    "",
-                    ...transportZones.map(
-                      (zone) => zone.display_name || zone.label || zone.code
-                    ),
-                  ]}
-                  optionLabels={{
-                    "": "Sin traslado / seleccionar zona",
-                  }}
-                />
-
-                <SelectField
-                  label="Diseño gráfico"
-                  value={form.disenoGrafico}
-                  onChange={(value) => updateText("disenoGrafico", value)}
-                  options={[
-                    "NO_DISENO",
-                    ...designOptions.map((design) => design.code),
-                  ]}
-                  optionLabels={{
-                    NO_DISENO: "No lleva diseño",
-                    ...Object.fromEntries(
-                      designOptions.map((design) => [
-                        design.code,
-                        `${design.label} ${
-                          Number(design.price) > 0
-                            ? `- ${money(Number(design.price))}`
-                            : ""
-                        }`,
-                      ])
-                    ),
-                  }}
-                />
-
-                <NumberField
-                  label="Instalación extra"
-                  value={form.instalacion}
-                  onChange={(value) => updateText("instalacion", value)}
-                  step="1"
-                  min="0"
-                  suffix="$"
-                />
-              </div>
-
-              <div className="mt-4 grid gap-4 md:grid-cols-2">
-                <NumberField
-                  label="Andamios"
-                  value={form.andamios}
-                  onChange={(value) => updateText("andamios", value)}
-                  step="1"
-                  min="0"
-                  suffix="serv."
-                />
-
-                <NumberField
-                  label="Descolgadas"
-                  value={form.numeroDescolgadas}
-                  onChange={(value) => updateText("numeroDescolgadas", value)}
-                  step="1"
-                  min="0"
-                  suffix="serv."
-                />
-              </div>
-            </Panel>
-
-            <Panel
-              eyebrow="Tiempos y reglas"
-              title="Mano de obra e iluminación"
-              description="Puedes dejar tiempos automáticos o capturarlos manualmente."
-            >
-              <div className="grid gap-4 md:grid-cols-2">
-                <CheckField
-                  label="Usar tiempos automáticos"
-                  checked={form.usarTiemposAutomaticos}
-                  onChange={(value) =>
-                    updateForm("usarTiemposAutomaticos", value)
-                  }
-                />
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <NumberField
-                    label="Personas fabricación"
-                    value={form.personasFabricacion}
-                    onChange={(value) =>
-                      updateText("personasFabricacion", value)
-                    }
-                    step="1"
-                    min="1"
-                  />
-
-                  <NumberField
-                    label="Personas instalación"
-                    value={form.personasInstalacion}
-                    onChange={(value) =>
-                      updateText("personasInstalacion", value)
-                    }
-                    step="1"
-                    min="1"
-                  />
-                </div>
-              </div>
-
-              {!form.usarTiemposAutomaticos && (
-                <div className="mt-4 grid gap-4 md:grid-cols-2">
-                  <NumberField
-                    label="Horas fabricación manual"
-                    value={form.horasFabricacionManual}
-                    onChange={(value) =>
-                      updateText("horasFabricacionManual", value)
-                    }
-                    step="1"
-                    min="0"
-                    suffix="h"
-                  />
-
-                  <NumberField
-                    label="Horas instalación manual"
-                    value={form.horasInstalacionManual}
-                    onChange={(value) =>
-                      updateText("horasInstalacionManual", value)
-                    }
-                    step="1"
-                    min="0"
-                    suffix="h"
-                  />
-                </div>
+                      <TextField
+                        label="Vendedor"
+                        value={form.vendedor}
+                        onChange={(value) => updateText("vendedor", value)}
+                        placeholder="Nombre del vendedor"
+                      />
+                    </div>
+                  </div>
+                </TabPanel>
               )}
 
-              <div className="mt-4 grid gap-4 md:grid-cols-4">
-                <NumberField
-                  label="Watts por lámpara"
-                  value={form.wattsPorLampara}
-                  onChange={(value) => updateText("wattsPorLampara", value)}
-                  step="1"
-                  min="0"
-                  suffix="W"
-                />
+              {activeTab === "producto" && (
+                <TabPanel
+                  eyebrow="Producto"
+                  title="Configuración de caja de luz"
+                  description="Define tipo de caja, carátula e iluminación."
+                >
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <SelectField
+                      label="Tipo de caja"
+                      value={form.tipoCaja}
+                      onChange={(value) => updateText("tipoCaja", value)}
+                      options={tipoCajaOptions}
+                      optionLabels={tipoCajaLabels}
+                    />
 
-                <NumberField
-                  label="Tiras normal m²"
-                  value={form.tirasPorM2Normal}
-                  onChange={(value) => updateText("tirasPorM2Normal", value)}
-                  step="1"
-                  min="0"
-                />
+                    <SelectField
+                      label="Carátula"
+                      value={form.caratula}
+                      onChange={(value) => updateText("caratula", value)}
+                      options={caratulaOptions}
+                    />
 
-                <NumberField
-                  label="Tiras ultra m²"
-                  value={form.tirasPorM2Ultra}
-                  onChange={(value) => updateText("tirasPorM2Ultra", value)}
-                  step="1"
-                  min="0"
-                />
+                    <SelectField
+                      label="Iluminación"
+                      value={form.iluminacion}
+                      onChange={(value) => updateText("iluminacion", value)}
+                      options={iluminacionOptions}
+                    />
+                  </div>
 
-                <NumberField
-                  label="Tiras micro m²"
-                  value={form.tirasPorM2Micro}
-                  onChange={(value) => updateText("tirasPorM2Micro", value)}
-                  step="1"
-                  min="0"
-                />
+                  <CaratulaInfo caratula={form.caratula} />
+                </TabPanel>
+              )}
+
+              {activeTab === "medidas" && (
+                <TabPanel
+                  eyebrow="Medidas"
+                  title="Dimensiones"
+                  description="Ancho y alto se capturan en metros. En medidas menores a un metro, el texto para cliente se expresa en centímetros."
+                >
+                  <div className="grid gap-4 md:grid-cols-4">
+                    <NumberField
+                      label="Ancho"
+                      value={form.anchoM}
+                      onChange={(value) => updateText("anchoM", value)}
+                      step="0.01"
+                      min="0"
+                      suffix="m"
+                    />
+
+                    <NumberField
+                      label="Alto"
+                      value={form.altoM}
+                      onChange={(value) => updateText("altoM", value)}
+                      step="0.01"
+                      min="0"
+                      suffix="m"
+                    />
+
+                    <NumberField
+                      label="Cantidad"
+                      value={form.cantidad}
+                      onChange={(value) => updateText("cantidad", value)}
+                      step="1"
+                      min="1"
+                      suffix="pza"
+                    />
+
+                    <NumberField
+                      label="Vistas"
+                      value={form.vistas}
+                      onChange={(value) => updateText("vistas", value)}
+                      step="1"
+                      min="1"
+                      suffix="vista"
+                    />
+                  </div>
+
+                  <div className="mt-4 grid gap-4 md:grid-cols-2">
+                    <CheckField
+                      label="Usar canto automático"
+                      checked={form.usarCantoAutomatico}
+                      onChange={(value) =>
+                        updateForm("usarCantoAutomatico", value)
+                      }
+                    />
+
+                    {!form.usarCantoAutomatico && (
+                      <NumberField
+                        label="Canto manual"
+                        value={form.cantoCmManual}
+                        onChange={(value) => updateText("cantoCmManual", value)}
+                        step="1"
+                        min="0"
+                        suffix="cm"
+                      />
+                    )}
+                  </div>
+                </TabPanel>
+              )}
+
+              {activeTab === "instalacion" && (
+                <TabPanel
+                  eyebrow="Instalación"
+                  title="Servicios, traslado y diseño"
+                  description="La instalación se calcula por horas-hombre y puede aumentar por condición."
+                >
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <SelectField
+                      label="Incluye instalación"
+                      value={form.incluyeInstalacion}
+                      onChange={(value) =>
+                        updateText("incluyeInstalacion", value)
+                      }
+                      options={["SI", "NO"]}
+                    />
+
+                    <SelectField
+                      label="Condición / altura"
+                      value={form.alturaCondicion}
+                      onChange={(value) =>
+                        updateText("alturaCondicion", value)
+                      }
+                      options={
+                        installationConditions.length > 0
+                          ? installationConditions.map((item) => item.label)
+                          : [
+                              "Pared / fachada baja",
+                              "Azotea",
+                              "Techo",
+                              "Descolgada",
+                            ]
+                      }
+                    />
+
+                    <SelectField
+                      label="Tipo de traslado"
+                      value={form.trasladoTipo}
+                      onChange={(value) => updateText("trasladoTipo", value)}
+                      options={["TRABAJO", "ENTREGA"]}
+                    />
+                  </div>
+
+                  <div className="mt-4 grid gap-4 md:grid-cols-3">
+                    <SelectField
+                      label="Zona de traslado"
+                      value={form.traslado}
+                      onChange={(value) => updateText("traslado", value)}
+                      options={[
+                        "",
+                        ...transportZones.map(
+                          (zone) =>
+                            zone.display_name || zone.label || zone.code
+                        ),
+                      ]}
+                      optionLabels={{
+                        "": "Sin traslado / seleccionar zona",
+                      }}
+                    />
+
+                    <SelectField
+                      label="Diseño gráfico"
+                      value={form.disenoGrafico}
+                      onChange={(value) => updateText("disenoGrafico", value)}
+                      options={[
+                        "NO_DISENO",
+                        ...designOptions.map((design) => design.code),
+                      ]}
+                      optionLabels={{
+                        NO_DISENO: "No lleva diseño",
+                        ...Object.fromEntries(
+                          designOptions.map((design) => [
+                            design.code,
+                            `${design.label} ${
+                              Number(design.price) > 0
+                                ? `- ${money(Number(design.price))}`
+                                : ""
+                            }`,
+                          ])
+                        ),
+                      }}
+                    />
+
+                    <NumberField
+                      label="Instalación extra"
+                      value={form.instalacion}
+                      onChange={(value) => updateText("instalacion", value)}
+                      step="1"
+                      min="0"
+                      suffix="$"
+                    />
+                  </div>
+
+                  <div className="mt-4 grid gap-4 md:grid-cols-2">
+                    <NumberField
+                      label="Andamios"
+                      value={form.andamios}
+                      onChange={(value) => updateText("andamios", value)}
+                      step="1"
+                      min="0"
+                      suffix="serv."
+                    />
+
+                    <NumberField
+                      label="Descolgadas"
+                      value={form.numeroDescolgadas}
+                      onChange={(value) =>
+                        updateText("numeroDescolgadas", value)
+                      }
+                      step="1"
+                      min="0"
+                      suffix="serv."
+                    />
+                  </div>
+                </TabPanel>
+              )}
+
+              {activeTab === "manoObra" && (
+                <TabPanel
+                  eyebrow="Mano de obra"
+                  title="Tiempos e iluminación"
+                  description="Puedes dejar tiempos automáticos o capturarlos manualmente."
+                >
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <CheckField
+                      label="Usar tiempos automáticos"
+                      checked={form.usarTiemposAutomaticos}
+                      onChange={(value) =>
+                        updateForm("usarTiemposAutomaticos", value)
+                      }
+                    />
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <NumberField
+                        label="Personas fabricación"
+                        value={form.personasFabricacion}
+                        onChange={(value) =>
+                          updateText("personasFabricacion", value)
+                        }
+                        step="1"
+                        min="1"
+                      />
+
+                      <NumberField
+                        label="Personas instalación"
+                        value={form.personasInstalacion}
+                        onChange={(value) =>
+                          updateText("personasInstalacion", value)
+                        }
+                        step="1"
+                        min="1"
+                      />
+                    </div>
+                  </div>
+
+                  {!form.usarTiemposAutomaticos && (
+                    <div className="mt-4 grid gap-4 md:grid-cols-2">
+                      <NumberField
+                        label="Horas fabricación manual"
+                        value={form.horasFabricacionManual}
+                        onChange={(value) =>
+                          updateText("horasFabricacionManual", value)
+                        }
+                        step="1"
+                        min="0"
+                        suffix="h"
+                      />
+
+                      <NumberField
+                        label="Horas instalación manual"
+                        value={form.horasInstalacionManual}
+                        onChange={(value) =>
+                          updateText("horasInstalacionManual", value)
+                        }
+                        step="1"
+                        min="0"
+                        suffix="h"
+                      />
+                    </div>
+                  )}
+
+                  <div className="mt-4 grid gap-4 md:grid-cols-4">
+                    <NumberField
+                      label="Watts por lámpara"
+                      value={form.wattsPorLampara}
+                      onChange={(value) => updateText("wattsPorLampara", value)}
+                      step="1"
+                      min="0"
+                      suffix="W"
+                    />
+
+                    <NumberField
+                      label="Tiras normal m²"
+                      value={form.tirasPorM2Normal}
+                      onChange={(value) =>
+                        updateText("tirasPorM2Normal", value)
+                      }
+                      step="1"
+                      min="0"
+                    />
+
+                    <NumberField
+                      label="Tiras ultra m²"
+                      value={form.tirasPorM2Ultra}
+                      onChange={(value) =>
+                        updateText("tirasPorM2Ultra", value)
+                      }
+                      step="1"
+                      min="0"
+                    />
+
+                    <NumberField
+                      label="Tiras micro m²"
+                      value={form.tirasPorM2Micro}
+                      onChange={(value) =>
+                        updateText("tirasPorM2Micro", value)
+                      }
+                      step="1"
+                      min="0"
+                    />
+                  </div>
+                </TabPanel>
+              )}
+
+              {activeTab === "precio" && (
+                <TabPanel
+                  eyebrow="Precio"
+                  title="Margen, IVA, extras y observaciones"
+                  description="El margen de utilidad y el IVA están bloqueados para mantener la política de precios."
+                >
+                  <div className="grid gap-4 md:grid-cols-4">
+                    <NumberField
+                      label="Margen de utilidad"
+                      value={form.margen}
+                      onChange={() => undefined}
+                      step="1"
+                      min="0"
+                      suffix="%"
+                      locked
+                      helpText="Bloqueado"
+                    />
+
+                    <NumberField
+                      label="IVA"
+                      value={form.ivaPorcentaje}
+                      onChange={() => undefined}
+                      step="1"
+                      min="0"
+                      suffix="%"
+                      locked
+                      helpText="Bloqueado"
+                    />
+
+                    <NumberField
+                      label="Material extra"
+                      value={form.materialExtra}
+                      onChange={(value) => updateText("materialExtra", value)}
+                      step="1"
+                      min="0"
+                      suffix="$"
+                    />
+
+                    <NumberField
+                      label="Extras"
+                      value={form.extras}
+                      onChange={(value) => updateText("extras", value)}
+                      step="1"
+                      min="0"
+                      suffix="$"
+                    />
+                  </div>
+
+                  <label className="mt-4 block">
+                    <span className="text-xs font-black uppercase tracking-wide text-neutral-500">
+                      Observaciones
+                    </span>
+
+                    <textarea
+                      value={form.observaciones}
+                      onChange={(event) =>
+                        updateText("observaciones", event.target.value)
+                      }
+                      rows={3}
+                      className="mt-2 w-full resize-none rounded-2xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-neutral-600 focus:border-yellow-400"
+                      placeholder="Notas para la cotización..."
+                    />
+                  </label>
+                </TabPanel>
+              )}
+
+              <div className="mt-6 flex flex-col gap-3 border-t border-neutral-800 pt-5 sm:flex-row sm:items-center sm:justify-between">
+                <button
+                  type="button"
+                  onClick={goToPreviousTab}
+                  disabled={activeTab === tabs[0].key}
+                  className="rounded-2xl border border-neutral-700 bg-neutral-950 px-5 py-3 text-sm font-black uppercase tracking-wide text-neutral-300 transition hover:border-yellow-400 hover:text-yellow-300 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Anterior
+                </button>
+
+                <div className="text-center text-xs font-bold uppercase tracking-wide text-neutral-500">
+                  Paso {tabs.findIndex((tab) => tab.key === activeTab) + 1} de{" "}
+                  {tabs.length}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={goToNextTab}
+                  disabled={activeTab === tabs[tabs.length - 1].key}
+                  className="rounded-2xl bg-yellow-400 px-5 py-3 text-sm font-black uppercase tracking-wide text-neutral-950 transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Siguiente
+                </button>
               </div>
-            </Panel>
+            </section>
 
-            <Panel
-              eyebrow="Precio"
-              title="Margen, extras y observaciones"
-              description="El margen se usa para calcular el precio final."
-            >
-              <div className="grid gap-4 md:grid-cols-4">
-                <NumberField
-                  label="Margen"
-                  value={form.margen}
-                  onChange={(value) => updateText("margen", value)}
-                  step="1"
-                  min="0"
-                  suffix="%"
-                />
+            <details className="rounded-3xl border border-neutral-800 bg-neutral-900 p-5 shadow-2xl shadow-black/20">
+              <summary className="cursor-pointer text-sm font-black uppercase tracking-wide text-yellow-400">
+                Ver partidas calculadas
+              </summary>
 
-                <NumberField
-                  label="IVA"
-                  value={form.ivaPorcentaje}
-                  onChange={(value) => updateText("ivaPorcentaje", value)}
-                  step="1"
-                  min="0"
-                  suffix="%"
-                />
-
-                <NumberField
-                  label="Material extra"
-                  value={form.materialExtra}
-                  onChange={(value) => updateText("materialExtra", value)}
-                  step="1"
-                  min="0"
-                  suffix="$"
-                />
-
-                <NumberField
-                  label="Extras"
-                  value={form.extras}
-                  onChange={(value) => updateText("extras", value)}
-                  step="1"
-                  min="0"
-                  suffix="$"
-                />
+              <div className="mt-5">
+                <MaterialsTable partidas={result.partidas} />
               </div>
-
-              <label className="mt-4 block">
-                <span className="text-xs font-black uppercase tracking-wide text-neutral-500">
-                  Observaciones
-                </span>
-
-                <textarea
-                  value={form.observaciones}
-                  onChange={(event) =>
-                    updateText("observaciones", event.target.value)
-                  }
-                  rows={3}
-                  className="mt-2 w-full resize-none rounded-2xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-neutral-600 focus:border-yellow-400"
-                  placeholder="Notas para la cotización..."
-                />
-              </label>
-            </Panel>
+            </details>
           </div>
 
-          <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
+          <aside className="space-y-5 xl:sticky xl:top-6 xl:self-start">
             <ResultSummary result={result} />
 
             <Panel
@@ -652,7 +782,7 @@ export default function CajasLuzForm({
                   onClick={copyQuoteText}
                   className="rounded-2xl border border-neutral-700 bg-neutral-950 px-5 py-3 text-sm font-black uppercase tracking-wide text-neutral-200 transition hover:border-yellow-400 hover:text-yellow-300"
                 >
-                  Copiar texto
+                  Copiar
                 </button>
 
                 <button
@@ -679,14 +809,6 @@ export default function CajasLuzForm({
             </Panel>
           </aside>
         </section>
-
-        <Panel
-          eyebrow="Materiales"
-          title="Partidas calculadas"
-          description="Materiales, mano de obra, servicios y costos internos calculados."
-        >
-          <MaterialsTable partidas={result.partidas} />
-        </Panel>
       </div>
     </main>
   );
@@ -694,20 +816,102 @@ export default function CajasLuzForm({
 
 function HeaderCard() {
   return (
-    <section className="rounded-3xl border border-neutral-800 bg-gradient-to-br from-neutral-900 via-neutral-900 to-yellow-500/10 p-5 shadow-2xl shadow-black/20 md:p-6">
-      <p className="text-xs font-black uppercase tracking-[0.22em] text-yellow-400">
-        Hollow Cotizadores
-      </p>
+    <section className="overflow-hidden rounded-3xl border border-neutral-800 bg-gradient-to-br from-neutral-900 via-neutral-900 to-yellow-500/10 p-5 shadow-2xl shadow-black/20 md:p-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-yellow-400">
+            Hollow Cotizadores
+          </p>
 
-      <h1 className="mt-2 text-3xl font-black tracking-tight md:text-4xl">
-        Cotizador de cajas de luz
-      </h1>
+          <h1 className="mt-2 text-3xl font-black tracking-tight md:text-4xl">
+            Cotizador de cajas de luz
+          </h1>
 
-      <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-400">
-        Calcula materiales, mano de obra, instalación, traslado, margen y texto
-        comercial para copiar al cliente.
-      </p>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-400">
+            Calcula materiales, mano de obra, instalación, traslado, margen y
+            texto comercial para copiar al cliente.
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-yellow-500/20 bg-yellow-500/10 px-4 py-3 text-sm font-black uppercase tracking-wide text-yellow-200">
+          Margen e IVA bloqueados
+        </div>
+      </div>
     </section>
+  );
+}
+
+function TabsNav({
+  activeTab,
+  setActiveTab,
+}: {
+  activeTab: TabKey;
+  setActiveTab: (tab: TabKey) => void;
+}) {
+  return (
+    <nav className="rounded-3xl border border-neutral-800 bg-neutral-900 p-2 shadow-2xl shadow-black/20">
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        {tabs.map((tab, index) => {
+          const active = activeTab === tab.key;
+
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={[
+                "rounded-2xl px-4 py-3 text-left transition",
+                active
+                  ? "bg-yellow-400 text-neutral-950 shadow-lg shadow-yellow-400/10"
+                  : "bg-neutral-950 text-neutral-300 hover:bg-neutral-800",
+              ].join(" ")}
+            >
+              <span className="block text-[10px] font-black uppercase tracking-[0.2em] opacity-70">
+                Paso {index + 1}
+              </span>
+
+              <span className="mt-1 block text-sm font-black uppercase tracking-wide">
+                {tab.label}
+              </span>
+
+              <span className="mt-1 hidden text-xs opacity-70 xl:block">
+                {tab.description}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
+
+function TabPanel({
+  eyebrow,
+  title,
+  description,
+  children,
+}: {
+  eyebrow: string;
+  title: string;
+  description?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div>
+      <p className="text-xs font-black uppercase tracking-[0.22em] text-yellow-400">
+        {eyebrow}
+      </p>
+
+      <h2 className="mt-1 text-2xl font-black">{title}</h2>
+
+      {description && (
+        <p className="mt-2 text-sm leading-6 text-neutral-400">
+          {description}
+        </p>
+      )}
+
+      <div className="mt-6">{children}</div>
+    </div>
   );
 }
 
@@ -775,6 +979,8 @@ function NumberField({
   step,
   min,
   suffix,
+  locked = false,
+  helpText,
 }: {
   label: string;
   value: string;
@@ -782,21 +988,40 @@ function NumberField({
   step: string;
   min?: string;
   suffix?: string;
+  locked?: boolean;
+  helpText?: string;
 }) {
   return (
     <label className="block">
-      <span className="text-xs font-black uppercase tracking-wide text-neutral-500">
-        {label}
+      <span className="flex items-center justify-between gap-3 text-xs font-black uppercase tracking-wide text-neutral-500">
+        <span>{label}</span>
+
+        {locked && (
+          <span className="rounded-full border border-yellow-500/20 bg-yellow-500/10 px-2 py-1 text-[10px] text-yellow-300">
+            Bloqueado
+          </span>
+        )}
       </span>
 
-      <div className="mt-2 flex min-h-12 overflow-hidden rounded-2xl border border-neutral-700 bg-neutral-950 focus-within:border-yellow-400">
+      <div
+        className={[
+          "mt-2 flex min-h-12 overflow-hidden rounded-2xl border bg-neutral-950",
+          locked
+            ? "border-yellow-500/20 opacity-80"
+            : "border-neutral-700 focus-within:border-yellow-400",
+        ].join(" ")}
+      >
         <input
           type="number"
           value={value}
-          onChange={(event) => onChange(event.target.value)}
+          onChange={(event) => {
+            if (!locked) onChange(event.target.value);
+          }}
           step={step}
           min={min}
-          className="w-full bg-transparent px-4 text-sm text-white outline-none"
+          disabled={locked}
+          readOnly={locked}
+          className="w-full bg-transparent px-4 text-sm text-white outline-none disabled:cursor-not-allowed disabled:text-neutral-300"
         />
 
         {suffix && (
@@ -805,6 +1030,10 @@ function NumberField({
           </span>
         )}
       </div>
+
+      {helpText && (
+        <p className="mt-2 text-xs font-bold text-neutral-500">{helpText}</p>
+      )}
     </label>
   );
 }
