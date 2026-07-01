@@ -141,10 +141,11 @@ export default function CajasLuzForm({
 
   const catalog = costItems ?? costs ?? costRows ?? [];
   const saveQuoteAction = saveCajaLuzQuote ?? saveAction;
+
   const normalizedRole = String(userRole ?? "").trim().toLowerCase();
 
-const canEditPricing =
-  normalizedRole === "admin" || normalizedRole === "administrador";
+  const canEditPricing =
+    normalizedRole === "admin" || normalizedRole === "administrador";
 
   const costMap = useMemo(() => {
     const map = new Map<string, number>();
@@ -159,28 +160,28 @@ const canEditPricing =
     return map;
   }, [catalog]);
 
-const lockedForm = useMemo<FormState>(() => {
-  if (canEditPricing) {
-    return form;
-  }
+  const safePricingForm = useMemo<FormState>(() => {
+    if (canEditPricing) {
+      return form;
+    }
 
-  return {
-    ...form,
-    margen: "40",
-    ivaPorcentaje: "16",
-  };
-}, [form, canEditPricing]);
+    return {
+      ...form,
+      margen: "40",
+      ivaPorcentaje: "16",
+    };
+  }, [form, canEditPricing]);
 
   const result = useMemo(() => {
     return calculateCajaLuz(
-      lockedForm,
+      safePricingForm,
       costMap,
       installationConditions,
       transportZones,
       designOptions
     );
   }, [
-    lockedForm,
+    safePricingForm,
     costMap,
     installationConditions,
     transportZones,
@@ -221,11 +222,11 @@ const lockedForm = useMemo<FormState>(() => {
     startSaving(async () => {
       try {
         const payload: SaveQuotePayload = {
-          clientId: lockedForm.clientId || null,
-          cliente: lockedForm.cliente || "Sin cliente",
-          proyecto: lockedForm.proyecto || "Sin proyecto",
-          vendedor: lockedForm.vendedor || "",
-          form: lockedForm,
+          clientId: safePricingForm.clientId || null,
+          cliente: safePricingForm.cliente || "Sin cliente",
+          proyecto: safePricingForm.proyecto || "Sin proyecto",
+          vendedor: safePricingForm.vendedor || "",
+          form: safePricingForm,
           result,
           textoCotizacion: result.textoCotizacion,
         };
@@ -599,16 +600,38 @@ const lockedForm = useMemo<FormState>(() => {
             <Panel
               eyebrow="Precio"
               title="Margen, extras y observaciones"
-              description="El margen de utilidad y el IVA están bloqueados por política comercial."
+              description={
+                canEditPricing
+                  ? "Como administrador puedes modificar margen e IVA."
+                  : "El margen de utilidad y el IVA están bloqueados por política comercial."
+              }
             >
               <div className="grid gap-4 md:grid-cols-4">
-                <LockedNumberField
-                  label="Margen de utilidad"
-                  value="40"
-                  suffix="%"
-                />
+                {canEditPricing ? (
+                  <NumberField
+                    label="Margen"
+                    value={form.margen}
+                    onChange={(value) => updateText("margen", value)}
+                    step="1"
+                    min="0"
+                    suffix="%"
+                  />
+                ) : (
+                  <LockedNumberField label="Margen" value="40" suffix="%" />
+                )}
 
-                <LockedNumberField label="IVA" value="16" suffix="%" />
+                {canEditPricing ? (
+                  <NumberField
+                    label="IVA"
+                    value={form.ivaPorcentaje}
+                    onChange={(value) => updateText("ivaPorcentaje", value)}
+                    step="1"
+                    min="0"
+                    suffix="%"
+                  />
+                ) : (
+                  <LockedNumberField label="IVA" value="16" suffix="%" />
+                )}
 
                 <NumberField
                   label="Material extra"
@@ -708,26 +731,18 @@ const lockedForm = useMemo<FormState>(() => {
 function HeaderCard() {
   return (
     <section className="rounded-3xl border border-neutral-800 bg-gradient-to-br from-neutral-900 via-neutral-900 to-yellow-500/10 p-5 shadow-2xl shadow-black/20 md:p-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-yellow-400">
-            Hollow Cotizadores
-          </p>
+      <p className="text-xs font-black uppercase tracking-[0.22em] text-yellow-400">
+        Hollow Cotizadores
+      </p>
 
-          <h1 className="mt-2 text-3xl font-black tracking-tight md:text-4xl">
-            Cotizador de cajas de luz
-          </h1>
+      <h1 className="mt-2 text-3xl font-black tracking-tight md:text-4xl">
+        Cotizador de cajas de luz
+      </h1>
 
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-400">
-            Calcula materiales, mano de obra, instalación, traslado, margen y
-            texto comercial para copiar al cliente.
-          </p>
-        </div>
-
-        <div className="rounded-2xl border border-yellow-500/20 bg-yellow-500/10 px-4 py-3 text-xs font-black uppercase tracking-wide text-yellow-200">
-          Margen 40% · IVA 16%
-        </div>
-      </div>
+      <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-400">
+        Calcula materiales, mano de obra, instalación, traslado, margen y texto
+        comercial para copiar al cliente.
+      </p>
     </section>
   );
 }
