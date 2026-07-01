@@ -132,6 +132,7 @@ export default function CajasLuzForm({
   designOptions = [],
   saveCajaLuzQuote,
   saveAction,
+  userRole = "",
 }: CajasLuzFormProps) {
   const [form, setForm] = useState<FormState>(defaultForm);
   const [saveMessage, setSaveMessage] = useState("");
@@ -140,6 +141,10 @@ export default function CajasLuzForm({
 
   const catalog = costItems ?? costs ?? costRows ?? [];
   const saveQuoteAction = saveCajaLuzQuote ?? saveAction;
+  const normalizedRole = String(userRole ?? "").trim().toLowerCase();
+
+const canEditPricing =
+  normalizedRole === "admin" || normalizedRole === "administrador";
 
   const costMap = useMemo(() => {
     const map = new Map<string, number>();
@@ -154,13 +159,17 @@ export default function CajasLuzForm({
     return map;
   }, [catalog]);
 
-  const lockedForm = useMemo<FormState>(() => {
-    return {
-      ...form,
-      margen: "40",
-      ivaPorcentaje: "16",
-    };
-  }, [form]);
+const lockedForm = useMemo<FormState>(() => {
+  if (canEditPricing) {
+    return form;
+  }
+
+  return {
+    ...form,
+    margen: "40",
+    ivaPorcentaje: "16",
+  };
+}, [form, canEditPricing]);
 
   const result = useMemo(() => {
     return calculateCajaLuz(
